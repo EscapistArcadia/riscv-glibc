@@ -647,4 +647,8 @@ check_stacksize_attr (size_t st)
   return EINVAL;
 }
 
+extern int __pthread_attr_setprimitive_np(pthread_attr_t *attr, accel_primitive_t prim) attribute_hidden;
+extern int __pthread_attr_setmmiobase_np(pthread_attr_t *attr, void *mem) attribute_hidden;
+extern int __pthread_attr_setsmqueue_np(pthread_attr_t *attr, uint64_t queue_ptr) attribute_hidden;
+
 #endif	/* pthreadP.h */

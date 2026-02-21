@@ -263,6 +263,9 @@ libpthread {
   }
 
   GLIBC_2.22 {
+    pthread_attr_setprimitive_np;
+    pthread_attr_setmmiobase_np;
+    pthread_attr_setsmqueue_np;
   }
 
   GLIBC_PRIVATE {

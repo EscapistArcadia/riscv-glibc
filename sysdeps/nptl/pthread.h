@@ -22,6 +22,7 @@
 #include <endian.h>
 #include <sched.h>
 #include <time.h>
+#include <stdint.h>
 
 #include <bits/pthreadtypes.h>
 #include <bits/setjmp.h>
@@ -1156,6 +1157,13 @@ __NTH (pthread_equal (pthread_t __thread1, pthread_t __thread2))
   return __thread1 == __thread2;
 }
 #endif
+
+/* Accelerator support.  */
+typedef uint8_t accel_primitive_t; // TODO: This should be defined in a more appropriate header file.
+
+extern int pthread_attr_setprimitive_np(pthread_attr_t *attr, accel_primitive_t prim) __THROW;
+extern int pthread_attr_setmmiobase_np(pthread_attr_t *attr, void *mem) __THROW;
+extern int pthread_attr_setsmqueue_np(pthread_attr_t *attr, uint64_t queue_ptr) __THROW;
 
 __END_DECLS
 

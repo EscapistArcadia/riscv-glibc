@@ -144,6 +144,12 @@ libpthread-routines = nptl-init vars events version pt-interp \
 #		      pthread_setgid pthread_setegid pthread_setregid \
 #		      pthread_setresgid
 
+# accelerator support
+libpthread-routines += \
+			  pthread_attr_setprimitive \
+			  pthread_attr_setmmiobase \
+			  pthread_attr_setsmqueue 
+
 libpthread-shared-only-routines = version pt-interp pt-allocrtsig \
 				  unwind-forcedunwind
 libpthread-static-only-routines = pthread_atfork

@@ -22,7 +22,8 @@
 #include <stdint.h>
 #include <atomic.h>
 #include <endian.h>
-
+#include <sched.h> // to suppress clangd's "unknown type name" error
+#include <acceltypes.h>
 
 struct pthread_attr
 {
@@ -39,6 +40,8 @@ struct pthread_attr
   /* Affinity map.  */
   cpu_set_t *cpuset;
   size_t cpusetsize;
+
+  struct pthread_accel_attr_t accel;
 };
 
 #define ATTR_FLAG_DETACHSTATE		0x0001
@@ -48,6 +51,7 @@ struct pthread_attr
 #define ATTR_FLAG_OLDATTR		0x0010
 #define ATTR_FLAG_SCHED_SET		0x0020
 #define ATTR_FLAG_POLICY_SET		0x0040
+#define ATTR_FLAG_ACCELERATOR 0x0080
 
 
 /* Mutex attribute data structure.  */

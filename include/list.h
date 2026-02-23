@@ -48,15 +48,6 @@ list_add (list_t *newp, list_t *head)
   head->next = newp;
 }
 
-static inline void
-list_add_tail (list_t *newp, list_t *head)
-{
-  newp->prev = head->prev;
-  newp->next = head;
-  head->prev->next = newp;
-  atomic_write_barrier ();
-  head->prev = newp;
-}
 
 /* Remove element from list.  */
 static inline void

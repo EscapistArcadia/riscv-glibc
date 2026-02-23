@@ -5,6 +5,12 @@
 #include <stdbool.h>
 #include <list.h>
 
+#define PRIM_NONE 0
+#define PRIM_AUDIO_FFT 1
+#define PRIM_AUDIO_FIR 2
+#define PRIM_AUDIO_FFI 3
+#define PRIM_GEMM 4
+
 typedef uint8_t accel_prim_t;
 
 struct pthread_accel_attr_t;
@@ -98,6 +104,13 @@ struct physical_accel_t {
 	int ioctl_cm; // IOCTL access code
     int fd; // File descriptor of the device, when open
     struct esp_access *esp_access_desc; // Generic pointer to the access struct.
+};
+
+struct hpthread_cand_t {
+    unsigned accel_id;
+    accel_prim_t prim;
+    bool cpu_invoke;
+    struct hpthread_cand_t *next;
 };
 
 #endif

@@ -144,6 +144,9 @@ libpthread-routines = nptl-init vars events version pt-interp \
 #		      pthread_setgid pthread_setegid pthread_setregid \
 #		      pthread_setresgid
 
+# TODO: this file is placed under nptl/ only for temporary convenience due to Makefile. It should be placed back to nptl/virtuoso.
+libpthread-routines += pthread_utils
+
 libpthread-shared-only-routines = version pt-interp pt-allocrtsig \
 				  unwind-forcedunwind
 libpthread-static-only-routines = pthread_atfork

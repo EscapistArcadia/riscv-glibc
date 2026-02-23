@@ -4,13 +4,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
-#include <list.h>
 
 #include <dirent.h>
 #include <fnmatch.h>
 
-#include <virtuoso/gemm/gemm_stratus.h>
-#include <virtuoso/gemm/gemm_sm_stratus.h>
+#include <virtuoso/gemm_stratus.h>
+#include <virtuoso/gemm_sm_stratus.h>
 
 /* TODO: this file is placed under nptl/ only for temporary convenience due to Makefile. It should be placed back to nptl/virtuoso */
 
@@ -29,19 +28,6 @@ void gemm_sm_probe(struct physical_accel_t *accel) {
     struct gemm_sm_stratus_access *gemm_desc = (struct gemm_sm_stratus_access *) malloc (sizeof(struct gemm_sm_stratus_access));
     accel->esp_access_desc = (struct esp_access *) gemm_desc;
 }
-
-static LIST_HEAD(accel_list);
-static LIST_HEAD(cand_list);
-
-// static void insert_physical_accel(struct physical_accel_t *accel) {
-//     struct list_head *node;
-
-//     list_for_each(node, &accel_list) {
-//         if (list_entry(node, struct physical_accel_t, node) == accel) {
-//             return;
-//         }
-//     }
-// }
 
 int __pthread_probe_accelerators(void) {
     DIR *dir = opendir("/dev/");
@@ -62,17 +48,16 @@ int __pthread_probe_accelerators(void) {
     for (int i = 0; i < n; i++) {
         struct dirent *entry = list[i];
         if (fnmatch("*_stratus.*", entry->d_name, FNM_NOESCAPE) != 0) {
-            free(entry);
             continue;
         }
         struct physical_accel_t *accel_temp = (struct physical_accel_t *)malloc(sizeof(struct physical_accel_t));
-        if (__glibc_unlikely(!accel_temp)) {
+        if (!accel_temp) {
             perror("Failed to allocate memory for accelerator");
             return ENOMEM;
         }
 
         struct hpthread_cand_t *cand_temp = (struct hpthread_cand_t *) malloc(sizeof(struct hpthread_cand_t));
-        if (__glibc_unlikely(!cand_temp)) {
+        if (!cand_temp) {
             perror("Failed to allocate memory for candidate");
             free(accel_temp);
             return ENOMEM;
@@ -105,24 +90,17 @@ int __pthread_probe_accelerators(void) {
         char full_path[384];
         snprintf(full_path, 384, "/dev/%s", entry->d_name);
         accel_temp->fd = open(full_path, O_RDWR, 0);
-        if (__glibc_unlikely(accel_temp->fd < 0)) {
-            perror("Failed to open device file");
-            free(accel_temp);
-            free(cand_temp);
-            free(entry);
-            continue;
+        if (accel_temp->fd < 0) {
+            fprintf(stderr, "Error: cannot open %s", full_path);
+            exit(EXIT_FAILURE);
         }
         // Reset the accelerator to be sure
         if (!accel_temp->cpu_invoke) {
             struct esp_access *esp_access_desc = (struct esp_access *) accel_temp->esp_access_desc;
             accel_temp->esp_access_desc->ioctl_cm = ESP_IOCTL_ACC_RESET;
             if (ioctl(accel_temp->fd, accel_temp->ioctl_cm, esp_access_desc)) {
-                perror("Failed to reset accelerator");
-                close(accel_temp->fd);
-                free(accel_temp);
-                free(cand_temp);
-                free(entry);
-                continue;
+                perror("ioctl");
+                exit(EXIT_FAILURE);
             }
         } else {
             // No reset required for CPU invoke threads
@@ -137,26 +115,10 @@ int __pthread_probe_accelerators(void) {
             #endif
         }
 
-        // insert_physical_accel(accel_temp);
-        list_add_tail(&accel_temp->node, &accel_list); /* TODO: I added this routine. */
-        list_add_tail(&cand_temp->node, &cand_list);
         free(list[i]);
     }
     free(list);
     closedir(dir);
-
-    // Print the list of detected accelerators and candidates
-    // printf("Detected accelerators:\n");
-    // struct list_head *node;
-    // list_for_each(node, &accel_list) {
-    //     struct physical_accel_t *accel = list_entry(node, struct physical_accel_t, node);
-    //     printf("ID: %u, Device Name: %s, Primitive: %d, CPU Invoke: %d\n", accel->accel_id, accel->devname, accel->prim, accel->cpu_invoke);
-    // }
-    // printf("\nCandidate accelerators for CPU invocation:\n");
-    // list_for_each(node, &cand_list) {
-    //     struct hpthread_cand_t *cand = list_entry(node, struct hpthread_cand_t, node);
-    //     printf("ID: %u, Primitive: %d, CPU Invoke: %d\n", cand->accel_id, cand->prim, cand->cpu_invoke);
-    // }
 
     return 0;
 }

@@ -9,8 +9,8 @@
 #include <dirent.h>
 #include <fnmatch.h>
 
-#include <virtuoso/gemm_stratus.h>
-#include <virtuoso/gemm_sm_stratus.h>
+#include <virtuoso/gemm/gemm_stratus.h>
+#include <virtuoso/gemm/gemm_sm_stratus.h>
 
 /* TODO: this file is placed under nptl/ only for temporary convenience due to Makefile. It should be placed back to nptl/virtuoso */
 

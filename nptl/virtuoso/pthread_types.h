@@ -5,11 +5,15 @@
 #include <stdbool.h>
 #include <list.h>
 
+#define ATTR_FLAG_ACCELERATOR 0x0080
+#define primitive_is_valid(prim) ((prim) >= PRIM_NONE && (prim) <= PRIM_MAX)
+
 #define PRIM_NONE 0
 #define PRIM_AUDIO_FFT 1
 #define PRIM_AUDIO_FIR 2
 #define PRIM_AUDIO_FFI 3
 #define PRIM_GEMM 4
+#define PRIM_MAX PRIM_GEMM
 
 typedef uint8_t accel_prim_t;
 

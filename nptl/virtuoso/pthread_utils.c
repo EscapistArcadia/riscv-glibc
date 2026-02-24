@@ -12,6 +12,8 @@
 #include <virtuoso/gemm/gemm_stratus.h>
 #include <virtuoso/gemm/gemm_sm_stratus.h>
 
+#include <virtuoso/gemm/gemm_def.h>
+
 /* TODO: this file is placed under nptl/ only for temporary convenience due to Makefile. It should be placed back to nptl/virtuoso */
 
 static LIST_HEAD(accel_list);

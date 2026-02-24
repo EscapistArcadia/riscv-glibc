@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <atomic.h>
 #include <endian.h>
+#include <virtuoso/pthread_types.h>
 
 
 struct pthread_attr
@@ -39,6 +40,8 @@ struct pthread_attr
   /* Affinity map.  */
   cpu_set_t *cpuset;
   size_t cpusetsize;
+  
+  struct pthread_accel_attr_t accel_attr;
 };
 
 #define ATTR_FLAG_DETACHSTATE		0x0001

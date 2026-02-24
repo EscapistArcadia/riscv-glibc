@@ -22,7 +22,7 @@
 #include <endian.h>
 
 #if __riscv_xlen == 64
-# define __SIZEOF_PTHREAD_ATTR_T 56
+# define __SIZEOF_PTHREAD_ATTR_T 80 // sizeof(struct pthread_attr) = normal size + sizeof(struct pthread_accel_attr_t)
 # define __SIZEOF_PTHREAD_MUTEX_T 40
 # define __SIZEOF_PTHREAD_MUTEXATTR_T 4
 # define __SIZEOF_PTHREAD_COND_T 48

@@ -150,7 +150,10 @@ libpthread-routines += virtuoso/pthread_utils \
 		      virtuoso/gemm/gemm_def \
 			  virtuoso/esp/contig \
 			  virtuoso/esp/libesp \
-			  virtuoso/esp/test/le virtuoso/esp/test/test virtuoso/esp/test/wami
+			  virtuoso/esp/test/le virtuoso/esp/test/test virtuoso/esp/test/wami \
+			  virtuoso/pthread_attr_setprimitive_np \
+			  virtuoso/pthread_attr_setsmqueue_np \
+			  virtuoso/pthread_attr_setmmiobase_np
 
 libpthread-shared-only-routines = version pt-interp pt-allocrtsig \
 				  unwind-forcedunwind

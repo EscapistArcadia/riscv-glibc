@@ -32,7 +32,7 @@
 #include <exit-thread.h>
 #include <default-sched.h>
 #include <futex-internal.h>
-#include "libioP.h"
+#include <virtuoso/pthread_types.h>
 
 #include <shlib-compat.h>
 
@@ -664,6 +664,11 @@ __pthread_create_2_1 (pthread_t *newthread, const pthread_attr_t *attr,
       lll_unlock (__default_pthread_attr_lock, LLL_PRIVATE);
       iattr = &default_attr;
     }
+
+  if (iattr->flags & ATTR_FLAG_ACCELERATOR) {
+    printf("Error: Accelerator threads are not supported on RISC-V.\n");
+    return EINVAL;
+  }
 
   struct pthread *pd = NULL;
   int err = ALLOCATE_STACK (iattr, &pd);

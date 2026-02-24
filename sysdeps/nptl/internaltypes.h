@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <atomic.h>
 #include <endian.h>
+#include <sched.h> // To suppress errors about cpu_set_t and sched_param in pthread_attr_t.
 #include <virtuoso/pthread_types.h>
 
 

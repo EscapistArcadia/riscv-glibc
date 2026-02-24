@@ -1,6 +1,7 @@
 #ifndef __GEMM_QUEUE_H__
 #define __GEMM_QUEUE_H__
 
+#include <stdio.h>
 #include <virtuoso/sm_queue.h>
 #include <virtuoso/gemm/gemm_node_args.h>
 

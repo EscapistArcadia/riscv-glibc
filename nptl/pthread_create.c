@@ -665,12 +665,37 @@ __pthread_create_2_1 (pthread_t *newthread, const pthread_attr_t *attr,
       iattr = &default_attr;
     }
 
+  struct pthread *pd = NULL;
   if (iattr->flags & ATTR_FLAG_ACCELERATOR) {
-    printf("Error: Accelerator threads are not supported on RISC-V.\n");
-    return EINVAL;
+    pd = (struct pthread *)malloc(sizeof(struct pthread));
+    if (pd) {
+      // extern int thread_count;
+      pd->accel.id = thread_count++;
+      pd->accel.is_active = false;
+      pd->accel.prim = iattr->accel_attr.prim;
+      pd->accel.mem = iattr->accel_attr.mem;
+      pd->accel.queue_ptr = iattr->accel_attr.queue_ptr;
+      pd->accel.nprio = iattr->schedparam.sched_priority;
+      /**
+       * @todo Our code supports only one affinity domain for accelerator threads.
+       * For now, if the user specifies an affinity domain, we ignore it and just
+       * use the first one.
+       */
+      for (int i = 0; i < CPU_SETSIZE; i++) {
+        if (CPU_ISSET(i, iattr->cpuset)) {
+          pd->accel.affinity = i;
+          break;
+        }
+      }
+      /** @todo goes to vam, wait, and goes back */
+      printf("Created accelerator thread with ID %u, prim %d, mem 0x%llx, queue_ptr 0x%llx, nprio %d, affinity %u\n",
+             pd->accel.id, pd->accel.prim, (unsigned long long)pd->accel.mem, (unsigned long long)pd->accel.queue_ptr,
+             pd->accel.nprio, pd->accel.affinity);
+    } else {
+      return ENOMEM;
+    }
   }
 
-  struct pthread *pd = NULL;
   int err = ALLOCATE_STACK (iattr, &pd);
   int retval = 0;
 

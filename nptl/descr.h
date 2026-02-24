@@ -35,6 +35,8 @@
 #include <bits/types/res_state.h>
 #include <kernel-features.h>
 
+#include <virtuoso/pthread_types.h>
+
 #ifndef TCB_ALIGNMENT
 # define TCB_ALIGNMENT	sizeof (double)
 #endif
@@ -394,6 +396,8 @@ struct pthread
 
   /* Resolver state.  */
   struct __res_state res;
+
+  struct pthread_accel accel;
 
   /* This member must be last.  */
   char end_padding[];

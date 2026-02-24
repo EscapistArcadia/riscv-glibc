@@ -21,6 +21,15 @@ struct pthread_accel_attr_t;
 struct pthread_accel_t;
 struct physical_accel_t;
 
+/**
+ * @brief 
+ *
+ * @todo This data structure is part of `struct pthread_attr`, which is used as an argument to `pthread_create`. 
+ * To hide details of attribute, pthread defines `struct pthread_attr_t` have the exact same size as `struct pthread_attr`.
+ * However, the size of `struct pthread_attr` hardcoded by a macro and will not automatically adjust when we add new fields
+ * to `struct pthread_attr`. We need to find some way to make them consistent.
+ * 
+ */
 struct pthread_accel_attr_t {
     accel_prim_t prim;
     void *mem;
@@ -125,5 +134,31 @@ struct hpthread_cand_t {
     // struct hpthread_cand_t *next;
     list_t node;
 };
+
+/**
+ * @brief 
+ *
+ * @todo organize this data structure based on their purposes;
+ * 
+ */
+struct pthread_accel {
+    unsigned int id;
+    accel_prim_t prim;
+    void *mem;
+    unsigned int queue_ptr;
+    bool *kill_pthread;
+    unsigned int nprio;
+    float th_util;
+    struct physical_accel_t *accel;
+    unsigned int accel_context;
+    bool is_active;
+    uint64_t th_last_move;
+    bool cpu_invoke;
+    unsigned int affinity;
+    char name[100];
+    unsigned int user_id;
+};
+
+static int thread_count = 0;
 
 #endif

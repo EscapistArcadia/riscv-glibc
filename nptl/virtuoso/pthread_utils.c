@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
+#include <list.h>
 
 #include <dirent.h>
 #include <fnmatch.h>
@@ -28,6 +29,9 @@ void gemm_sm_probe(struct physical_accel_t *accel) {
     struct gemm_sm_stratus_access *gemm_desc = (struct gemm_sm_stratus_access *) malloc (sizeof(struct gemm_sm_stratus_access));
     accel->esp_access_desc = (struct esp_access *) gemm_desc;
 }
+
+static LIST_HEAD(accel_list);
+static LIST_HEAD(cand_list);
 
 int __pthread_probe_accelerators(void) {
     DIR *dir = opendir("/dev/");
@@ -115,11 +119,22 @@ int __pthread_probe_accelerators(void) {
             #endif
         }
 
+        list_add_tail(&accel_temp->node, &accel_list);
+        list_add_tail(&cand_temp->node, &cand_list);
         free(list[i]);
     }
     free(list);
     closedir(dir);
 
+    // list_t *node;
+    // list_for_each(node, &accel_list) {
+    //     struct physical_accel_t *accel = list_entry(node, struct physical_accel_t, node);
+    //     printf("Found accelerator: %s\n", accel->devname);
+    // }
+    // list_for_each(node, &cand_list) {
+    //     struct hpthread_cand_t *cand = list_entry(node, struct hpthread_cand_t, node);
+    //     printf("Candidate accelerator ID: %u, Primitive: %d, CPU Invoke: %d\n", cand->accel_id, cand->prim, cand->cpu_invoke);
+    // }
     return 0;
 }
 // /applications/test/04_fcnn_mt_pthread/opt.exe 1000 2 models/model_64_2.txt

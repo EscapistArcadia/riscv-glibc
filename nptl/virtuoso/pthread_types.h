@@ -78,16 +78,22 @@ typedef struct util_entry {
 } util_entry_t;
 
 struct physical_accel_t {
+    /* device metadata */
     unsigned accel_id; // ID for tracking
     accel_prim_t prim; // operation of the accelerator
+    bool cpu_invoke; // Is the accelerator invoked by a CPU thread?
+
+    /* hardware scheduling information */
     bitset_t valid_contexts; // Is the context currently allocated?
     uint64_t context_start_cycles[MAX_CONTEXTS]; // Start counter for the context to use for utilization
     uint64_t context_active_cycles[MAX_CONTEXTS]; // Active cycles for the context to use for utilization
     struct pthread *th[MAX_CONTEXTS]; // If allocated, what is the hpthread in the context?
     float context_util[MAX_CONTEXTS]; // Actual utilization of the context
     float effective_util; // Total utilization of the accelerator
+    util_entry_t *util_entry_list; // Utilization entry list
+
+    /* device status information */
     bool init_done; // Flag to identify whether the device was initialized in the past
-    struct physical_accel_t *next; // Next node in accel list
 #ifdef DO_PER_INVOKE
     pthread_t cpu_thread[MAX_CONTEXTS]; // If mapped toa CPU, this is the pthread ID
     struct cpu_invoke_args_t *args[MAX_CONTEXTS]; // If invoked by CPU, these are the arguments
@@ -95,22 +101,25 @@ struct physical_accel_t {
     pthread_t cpu_thread; // If mapped toa CPU, this is the pthread ID
     struct cpu_invoke_args_t *args; // If invoked by CPU, these are the arguments
 #endif
-    bool cpu_invoke; // Is the accelerator invoked by a CPU thread?
-    util_entry_t *util_entry_list; // Utilization entry list
     unsigned accel_lock; // Lock for the accelerator struct
 
-    // ESP-relevant variables
+    /* ESP-relevant variables */
     char devname[384]; // Name of device in file system
 	int ioctl_cm; // IOCTL access code
     int fd; // File descriptor of the device, when open
     struct esp_access *esp_access_desc; // Generic pointer to the access struct.
+
+    /* Linked list pointers */    
+    // struct physical_accel_t *next; // Next node in accel list
+    list_t node;
 };
 
 struct hpthread_cand_t {
     unsigned accel_id;
     accel_prim_t prim;
     bool cpu_invoke;
-    struct hpthread_cand_t *next;
+    // struct hpthread_cand_t *next;
+    list_t node;
 };
 
 #endif

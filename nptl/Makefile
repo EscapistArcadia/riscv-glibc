@@ -144,8 +144,8 @@ libpthread-routines = nptl-init vars events version pt-interp \
 #		      pthread_setgid pthread_setegid pthread_setregid \
 #		      pthread_setresgid
 
-# TODO: this file is placed under nptl/ only for temporary convenience due to Makefile. It should be placed back to nptl/virtuoso.
-libpthread-routines += pthread_utils
+# TODO: I need to manually run mkdir for generated object files, otherwise the build will fail with "No such file or directory" error. I need to figure out how to automate this in the Makefile.
+libpthread-routines += virtuoso/pthread_utils
 
 libpthread-shared-only-routines = version pt-interp pt-allocrtsig \
 				  unwind-forcedunwind

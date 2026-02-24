@@ -145,7 +145,12 @@ libpthread-routines = nptl-init vars events version pt-interp \
 #		      pthread_setresgid
 
 # TODO: I need to manually run mkdir for generated object files, otherwise the build will fail with "No such file or directory" error. I need to figure out how to automate this in the Makefile.
-libpthread-routines += virtuoso/pthread_utils
+# mkdir -p /home/shanboz2/riscv-gnu-toolchain/build-glibc-linux-rv64imafdc-lp64d/nptl/virtuoso
+libpthread-routines += virtuoso/pthread_utils \
+		      virtuoso/gemm/gemm_def \
+			  virtuoso/esp/contig \
+			  virtuoso/esp/libesp \
+			  virtuoso/esp/test/le virtuoso/esp/test/test virtuoso/esp/test/wami
 
 libpthread-shared-only-routines = version pt-interp pt-allocrtsig \
 				  unwind-forcedunwind

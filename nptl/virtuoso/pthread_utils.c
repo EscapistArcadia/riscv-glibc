@@ -14,22 +14,6 @@
 
 /* TODO: this file is placed under nptl/ only for temporary convenience due to Makefile. It should be placed back to nptl/virtuoso */
 
-void gemm_probe(struct physical_accel_t *accel) {
-    accel->prim = PRIM_GEMM;
-    accel->cpu_invoke = true;
-}
-
-// Device-dependent probe function for SM accelerator
-void gemm_sm_probe(struct physical_accel_t *accel) {
-    accel->prim = PRIM_GEMM;
-    accel->cpu_invoke = false;
-    accel->ioctl_cm = GEMM_SM_STRATUS_IOC_ACCESS;
-
-    // Create a new access struct and track within the device struct
-    struct gemm_sm_stratus_access *gemm_desc = (struct gemm_sm_stratus_access *) malloc (sizeof(struct gemm_sm_stratus_access));
-    accel->esp_access_desc = (struct esp_access *) gemm_desc;
-}
-
 static LIST_HEAD(accel_list);
 static LIST_HEAD(cand_list);
 

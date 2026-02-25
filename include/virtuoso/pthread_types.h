@@ -1,10 +1,13 @@
-#ifndef __VIRTUOSO_ACCEL_TYPES_H__
-#define __VIRTUOSO_ACCEL_TYPES_H__
+#ifndef __VIRTUOSO_PTHREAD_TYPES_H__
+#define __VIRTUOSO_PTHREAD_TYPES_H__
 
 #include <stdint.h>
 #include <stdbool.h>
 #include <list.h>
 #include <virtuoso/common/common_helper.h>
+
+/* TODO: should automate it inside Makefile CFLAGS */
+#define DO_PER_INVOKE
 
 #define ATTR_FLAG_ACCELERATOR 0x0080
 #define primitive_is_valid(prim) ((prim) >= PRIM_NONE && (prim) <= PRIM_MAX)
@@ -20,7 +23,17 @@ typedef uint8_t accel_prim_t;
 
 struct pthread_accel_attr_t;
 struct pthread_accel_t;
-struct physical_accel_t;
+// struct physical_accel_t;
+
+struct hpthread_cand_t;
+typedef struct hpthread_cand_t hpthread_cand_t;
+
+struct hpthread_cand_t {
+    unsigned accel_id;
+    accel_prim_t prim;
+    bool cpu_invoke;
+    hpthread_cand_t *next;
+};
 
 /**
  * @brief 
@@ -43,6 +56,7 @@ struct pthread_accel_t {
     void *mem;
     uint64_t queue_ptr;
     bool *kill_pthread;
+    unsigned nprio;
     float th_util;
     struct physical_accel_t *accel;
     unsigned accel_context;
@@ -55,98 +69,109 @@ struct pthread_accel_t {
     unsigned user_id;
 };
 
+static const char *hpthread_get_prim_name(accel_prim_t p) {
+    switch(p) {
+        case PRIM_NONE : return (const char *) "NONE";
+        case PRIM_AUDIO_FFT: return (const char *) "AUDIO_FFT";
+        case PRIM_AUDIO_FIR: return (const char *) "AUDIO_FIR";
+        case PRIM_AUDIO_FFI: return (const char *) "AUDIO_FFI";
+        case PRIM_GEMM: return (const char *) "GEMM";
+        default: return (const char *) "Unknown primitive";
+    }
+}
+
 /* TODO: I will move the following definitions to another header. */
 /* TODO: DO_PER_INVOKE */
 
-// Invoke arguments for CPU-invoked accelerators
-struct cpu_invoke_args_t {
-#ifdef DO_PER_INVOKE
-    unsigned context;
-    uint64_t active_cycles;
-#else
-    bitmap_t valid_contexts_ack;
-    uint64_t active_cycles[MAX_CONTEXTS];
-#endif
-    bool kill_pthread;
-    struct physical_accel_t *accel;
-};
+// // Invoke arguments for CPU-invoked accelerators
+// struct cpu_invoke_args_t {
+// #ifdef DO_PER_INVOKE
+//     unsigned context;
+//     uint64_t active_cycles;
+// #else
+//     bitmap_t valid_contexts_ack;
+//     uint64_t active_cycles[MAX_CONTEXTS];
+// #endif
+//     bool kill_pthread;
+//     struct physical_accel_t *accel;
+// };
 
-typedef struct util_entry {
-    float util[MAX_CONTEXTS];
-    unsigned id[MAX_CONTEXTS];
-    struct util_entry *next;
-    #ifdef LITE_REPORT
-    unsigned util_epoch_count;
-    #endif
-} util_entry_t;
+// typedef struct util_entry {
+//     float util[MAX_CONTEXTS];
+//     unsigned id[MAX_CONTEXTS];
+//     struct util_entry *next;
+//     #ifdef LITE_REPORT
+//     unsigned util_epoch_count;
+//     #endif
+// } util_entry_t;
 
-struct physical_accel_t {
-    /* device metadata */
-    unsigned accel_id; // ID for tracking
-    accel_prim_t prim; // operation of the accelerator
-    bool cpu_invoke; // Is the accelerator invoked by a CPU thread?
+// struct physical_accel_t {
+//     /* device metadata */
+//     unsigned accel_id; // ID for tracking
+//     accel_prim_t prim; // operation of the accelerator
+//     bool cpu_invoke; // Is the accelerator invoked by a CPU thread?
 
-    /* hardware scheduling information */
-    bitmap_t valid_contexts; // Is the context currently allocated?
-    uint64_t context_start_cycles[MAX_CONTEXTS]; // Start counter for the context to use for utilization
-    uint64_t context_active_cycles[MAX_CONTEXTS]; // Active cycles for the context to use for utilization
-    struct pthread *th[MAX_CONTEXTS]; // If allocated, what is the hpthread in the context?
-    float context_util[MAX_CONTEXTS]; // Actual utilization of the context
-    float effective_util; // Total utilization of the accelerator
-    util_entry_t *util_entry_list; // Utilization entry list
+//     /* hardware scheduling information */
+//     bitmap_t valid_contexts; // Is the context currently allocated?
+//     uint64_t context_start_cycles[MAX_CONTEXTS]; // Start counter for the context to use for utilization
+//     uint64_t context_active_cycles[MAX_CONTEXTS]; // Active cycles for the context to use for utilization
+//     struct pthread *th[MAX_CONTEXTS]; // If allocated, what is the hpthread in the context?
+//     float context_util[MAX_CONTEXTS]; // Actual utilization of the context
+//     float effective_util; // Total utilization of the accelerator
+//     util_entry_t *util_entry_list; // Utilization entry list
 
-    /* device status information */
-    bool init_done; // Flag to identify whether the device was initialized in the past
-#ifdef DO_PER_INVOKE
-    pthread_t cpu_thread[MAX_CONTEXTS]; // If mapped toa CPU, this is the pthread ID
-    struct cpu_invoke_args_t *args[MAX_CONTEXTS]; // If invoked by CPU, these are the arguments
-#else
-    pthread_t cpu_thread; // If mapped toa CPU, this is the pthread ID
-    struct cpu_invoke_args_t *args; // If invoked by CPU, these are the arguments
-#endif
-    unsigned accel_lock; // Lock for the accelerator struct
+//     /* device status information */
+//     bool init_done; // Flag to identify whether the device was initialized in the past
+// #ifdef DO_PER_INVOKE
+//     pthread_t cpu_thread[MAX_CONTEXTS]; // If mapped toa CPU, this is the pthread ID
+//     struct cpu_invoke_args_t *args[MAX_CONTEXTS]; // If invoked by CPU, these are the arguments
+// #else
+//     pthread_t cpu_thread; // If mapped toa CPU, this is the pthread ID
+//     struct cpu_invoke_args_t *args; // If invoked by CPU, these are the arguments
+// #endif
+//     unsigned accel_lock; // Lock for the accelerator struct
 
-    /* ESP-relevant variables */
-    char devname[384]; // Name of device in file system
-	int ioctl_cm; // IOCTL access code
-    int fd; // File descriptor of the device, when open
-    struct esp_access *esp_access_desc; // Generic pointer to the access struct.
+//     /* ESP-relevant variables */
+//     char devname[384]; // Name of device in file system
+// 	int ioctl_cm; // IOCTL access code
+//     int fd; // File descriptor of the device, when open
+//     struct esp_access *esp_access_desc; // Generic pointer to the access struct.
 
-    /* Linked list pointers */    
-    // struct physical_accel_t *next; // Next node in accel list
-    list_t node;
-};
+//     /* Linked list pointers */    
+//     // struct physical_accel_t *next; // Next node in accel list
+//     list_t node;
+// };
 
-struct hpthread_cand_t {
-    unsigned accel_id;
-    accel_prim_t prim;
-    bool cpu_invoke;
-    // struct hpthread_cand_t *next;
-    list_t node;
-};
+// struct hpthread_cand_t {
+//     unsigned accel_id;
+//     accel_prim_t prim;
+//     bool cpu_invoke;
+//     // struct hpthread_cand_t *next;
+//     list_t node;
+// };
 
-/**
- * @brief 
- *
- * @todo organize this data structure based on their purposes;
- * 
- */
-struct pthread_accel {
-    unsigned int id;
-    accel_prim_t prim;
-    void *mem;
-    unsigned int queue_ptr;
-    bool *kill_pthread;
-    unsigned int nprio;
-    float th_util;
-    struct physical_accel_t *accel;
-    unsigned int accel_context;
-    bool is_active;
-    uint64_t th_last_move;
-    bool cpu_invoke;
-    unsigned int affinity;
-    char name[100];
-    unsigned int user_id;
-};
+// /**
+//  * @brief 
+//  *
+//  * @todo organize this data structure based on their purposes;
+//  * 
+//  */
+// struct pthread_accel {
+//     unsigned int id;
+//     accel_prim_t prim;
+//     void *mem;
+//     unsigned int queue_ptr;
+//     bool *kill_pthread;
+//     unsigned int nprio;
+//     float th_util;
+//     struct physical_accel_t *accel;
+//     unsigned int accel_context;
+//     bool is_active;
+//     uint64_t th_last_move;
+//     bool cpu_invoke;
+//     unsigned int affinity;
+//     char name[100];
+//     unsigned int user_id;
+// };
 
 #endif

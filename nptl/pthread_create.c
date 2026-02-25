@@ -691,6 +691,7 @@ __pthread_create_2_1 (pthread_t *newthread, const pthread_attr_t *attr,
       printf("Created accelerator thread with ID %u, prim %d, mem 0x%llx, queue_ptr 0x%llx, nprio %d, affinity %u\n",
              pd->accel.id, pd->accel.prim, (unsigned long long)pd->accel.mem, (unsigned long long)pd->accel.queue_ptr,
              pd->accel.nprio, pd->accel.affinity);
+      return 0;
     } else {
       return ENOMEM;
     }

@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <list.h>
+#include <virtuoso/common/common_helper.h>
 
 #define ATTR_FLAG_ACCELERATOR 0x0080
 #define primitive_is_valid(prim) ((prim) >= PRIM_NONE && (prim) <= PRIM_MAX)
@@ -57,24 +58,13 @@ struct pthread_accel_t {
 /* TODO: I will move the following definitions to another header. */
 /* TODO: DO_PER_INVOKE */
 
-//  Number of concurrent contexts possible in a single accelerator
-#define MAX_CONTEXTS 4
-
-#if (MAX_CONTEXTS == 1)
-#include <virtuoso/bitset/bitset_1.h>
-#elif (MAX_CONTEXTS == 2)
-#include <virtuoso/bitset/bitset_2.h>
-#elif (MAX_CONTEXTS == 4)
-#include <virtuoso/bitset/bitset_4.h>
-#endif
-
 // Invoke arguments for CPU-invoked accelerators
 struct cpu_invoke_args_t {
 #ifdef DO_PER_INVOKE
     unsigned context;
     uint64_t active_cycles;
 #else
-    bitset_t valid_contexts_ack;
+    bitmap_t valid_contexts_ack;
     uint64_t active_cycles[MAX_CONTEXTS];
 #endif
     bool kill_pthread;
@@ -97,7 +87,7 @@ struct physical_accel_t {
     bool cpu_invoke; // Is the accelerator invoked by a CPU thread?
 
     /* hardware scheduling information */
-    bitset_t valid_contexts; // Is the context currently allocated?
+    bitmap_t valid_contexts; // Is the context currently allocated?
     uint64_t context_start_cycles[MAX_CONTEXTS]; // Start counter for the context to use for utilization
     uint64_t context_active_cycles[MAX_CONTEXTS]; // Active cycles for the context to use for utilization
     struct pthread *th[MAX_CONTEXTS]; // If allocated, what is the hpthread in the context?
@@ -158,7 +148,5 @@ struct pthread_accel {
     char name[100];
     unsigned int user_id;
 };
-
-static int thread_count = 0;
 
 #endif

@@ -54,7 +54,7 @@ int __pthread_probe_accelerators(void) {
         }
         accel_temp->accel_id = device_id++;
         cand_temp->accel_id = accel_temp->accel_id ;
-        bitset_reset_all(accel_temp->valid_contexts);
+        bitmap_reset_all(accel_temp->valid_contexts);
         for (int i = 0; i < MAX_CONTEXTS; i++) {
             accel_temp->th[i] = NULL;
             accel_temp->context_start_cycles[i] = 0;

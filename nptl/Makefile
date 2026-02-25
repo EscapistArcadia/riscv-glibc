@@ -365,7 +365,7 @@ else
 tests-printers-libs := $(static-thread-library)
 endif
 
-LDFLAGS-pthread.so = -Wl,--enable-new-dtags,-z,nodelete,-z,initfirst
+LDFLAGS-pthread.so = -Wl,--enable-new-dtags,-z,nodelete,-z,initfirst,-latomic
 
 # GCC-4.9 compiles 'sprintf(NULL, ...)' into UD2 on x86_64 without -fno-builtin
 CFLAGS-tst-cleanup2.c = -fno-builtin

@@ -666,11 +666,11 @@ __pthread_create_2_1 (pthread_t *newthread, const pthread_attr_t *attr,
     }
 
   struct pthread *pd = NULL;
+  static int accel_id = 0;
   if (iattr->flags & ATTR_FLAG_ACCELERATOR) {
     pd = (struct pthread *)malloc(sizeof(struct pthread));
     if (pd) {
-      // extern int thread_count;
-      pd->accel.id = thread_count++;
+      pd->accel.id = accel_id++;
       pd->accel.is_active = false;
       pd->accel.prim = iattr->accel_attr.prim;
       pd->accel.mem = iattr->accel_attr.mem;

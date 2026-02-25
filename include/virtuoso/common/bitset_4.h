@@ -2,7 +2,7 @@
 #define __BITSET_4_H__
 
 // Custom implementation of bitset
-typedef uint8_t bitset_t;            /* uses only the low 4 bits */
+typedef uint8_t bitmap_t;            /* uses only the low 4 bits */
 
 /* internal helpers */
 #define BITSET4_MASK(i)   ((uint8_t)(1u << (i)))   /* 0 <= i < 4 */

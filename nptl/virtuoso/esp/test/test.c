@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define _GNU_SOURCE /* asprintf */
+// #define _GNU_SOURCE /* asprintf */
 
 #include <sys/syscall.h>
 #include <sys/types.h>

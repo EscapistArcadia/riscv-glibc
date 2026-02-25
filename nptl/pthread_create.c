@@ -33,6 +33,7 @@
 #include <default-sched.h>
 #include <futex-internal.h>
 #include <virtuoso/pthread_types.h>
+#include <virtuoso/vam/vam_interfaces.h>
 
 #include <shlib-compat.h>
 
@@ -669,8 +670,8 @@ __pthread_create_2_1 (pthread_t *newthread, const pthread_attr_t *attr,
   if (iattr->flags & ATTR_FLAG_ACCELERATOR) {
     pd = (struct pthread *)malloc(sizeof(struct pthread));
     if (pd) {
-      // extern int thread_count;
-      pd->accel.id = thread_count++;
+      static int thread_id = 0;
+      pd->accel.id = thread_id++;
       pd->accel.is_active = false;
       pd->accel.prim = iattr->accel_attr.prim;
       pd->accel.mem = iattr->accel_attr.mem;
@@ -687,10 +688,29 @@ __pthread_create_2_1 (pthread_t *newthread, const pthread_attr_t *attr,
           break;
         }
       }
-      /** @todo goes to vam, wait, and goes back */
-      printf("Created accelerator thread with ID %u, prim %d, mem 0x%llx, queue_ptr 0x%llx, nprio %d, affinity %u\n",
-             pd->accel.id, pd->accel.prim, (unsigned long long)pd->accel.mem, (unsigned long long)pd->accel.queue_ptr,
-             pd->accel.nprio, pd->accel.affinity);
+
+      HIGH_DEBUG(printf("[HPTHREAD] Requested hpthread %s (ID:%d).\n", th->name, th->id);)
+
+      // If VAM has not yet been started (i.e., interface is in vam_state_t::RESET, start one thread now)
+      if (hpthread_intf_swap(VAM_RESET, VAM_WAKEUP)) {
+        // Only one thread should enter here; remaining will wait for idle state
+        wakeup_vam();
+        hpthread_intf_set(VAM_IDLE);
+      }
+
+      // Check if the interface is IDLE. If yes, swap to BUSY. If not, block until it is
+      while (!hpthread_intf_swap(VAM_IDLE, VAM_BUSY)) SCHED_YIELD;
+      // Write the hpthread request to the interface
+      extern hpthread_intf_t intf;
+      intf.th = pd;
+      // Set the interface state to CREATE
+        hpthread_intf_set(VAM_CREATE);
+      // Block until the request is complete (interface state is DONE), then swap to IDLE
+      while (!hpthread_intf_swap(VAM_DONE, VAM_IDLE)) SCHED_YIELD;
+      HIGH_DEBUG(printf("[HPTHREAD] Received hpthread %s.\n", pd->name);)
+      pd->accel.is_active = true;
+      pd->accel.th_last_move = get_counter();
+      return 0;
     } else {
       return ENOMEM;
     }

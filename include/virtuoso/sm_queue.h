@@ -9,6 +9,11 @@
 #define SM_COMMON_SIZE 6
 #define SM_QUEUE_SIZE 4
 
+// Context descriptors status
+#define QUEUE_INVALID 0
+#define QUEUE_AVAIL 1
+#define QUEUE_BUSY 2
+
 typedef struct {
     unsigned output_queue;
     unsigned output_entry;
@@ -22,7 +27,7 @@ typedef struct {
 } sm_queue_t;
 
 static inline void sm_queue_init(sm_queue_t *q) {
-    // __atomic_store_n(&(q->stat), QUEUE_AVAIL, __ATOMIC_SEQ_CST);
+    __atomic_store_n(&(q->stat), QUEUE_AVAIL, __ATOMIC_SEQ_CST);
     __atomic_store_n(&(q->head), 0, __ATOMIC_SEQ_CST);
     __atomic_store_n(&(q->tail), 0, __ATOMIC_SEQ_CST);
     for (unsigned i = 0; i < SM_QUEUE_SIZE; i++) {

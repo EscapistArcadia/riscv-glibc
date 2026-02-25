@@ -153,7 +153,8 @@ libpthread-routines += virtuoso/pthread_utils \
 			  virtuoso/esp/test/le virtuoso/esp/test/test virtuoso/esp/test/wami \
 			  virtuoso/pthread_attr_setprimitive_np \
 			  virtuoso/pthread_attr_setsmqueue_np \
-			  virtuoso/pthread_attr_setmmiobase_np
+			  virtuoso/pthread_attr_setmmiobase_np \
+			  virtuoso/vam/vam_backend \
 
 libpthread-shared-only-routines = version pt-interp pt-allocrtsig \
 				  unwind-forcedunwind
@@ -234,6 +235,8 @@ CFLAGS-fdatasync.c = -fexceptions -fasynchronous-unwind-tables
 CFLAGS-fsync.c = -fexceptions -fasynchronous-unwind-tables
 
 CFLAGS-pt-system.c = -fexceptions
+
+CFLAGS-virtuoso/pthread_utils.c = -DHIGH_VERBOSE
 
 LDLIBS-tst-once5 = -lstdc++
 CFLAGS-tst-thread_local1.o = -std=gnu++11
@@ -365,7 +368,7 @@ else
 tests-printers-libs := $(static-thread-library)
 endif
 
-LDFLAGS-pthread.so = -Wl,--enable-new-dtags,-z,nodelete,-z,initfirst
+LDFLAGS-pthread.so = -Wl,--enable-new-dtags,-z,nodelete,-z,initfirst,-latomic
 
 # GCC-4.9 compiles 'sprintf(NULL, ...)' into UD2 on x86_64 without -fno-builtin
 CFLAGS-tst-cleanup2.c = -fno-builtin

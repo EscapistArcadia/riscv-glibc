@@ -2,7 +2,7 @@
 #define __BITSET_1_H__
 
 // Custom implementation of bitset
-typedef uint8_t bitset_t;            /* uses only the low 1 bit */
+typedef uint8_t bitmap_t;            /* uses only the low 1 bit */
 
 /* internal helpers */
 #define BITSET1_MASK(i)   ((uint8_t)(1u << (i)))   /* 0 <= i < 1 */
@@ -20,7 +20,7 @@ typedef uint8_t bitset_t;            /* uses only the low 1 bit */
 #define bitset_none(v)      (!bitset_any(v))
 
 /* bulk operations like bitset.set() / bitset.reset() with no index */
-#define bitset_set_all(v)   ((v) = 0x0Fu)
+#define bitset_set_all(v)   ((v) = 0x01u)
 #define bitset_reset_all(v) ((v) = 0x00u)
 
 /* Macro-only 1-bit popcount (values 0..1) */

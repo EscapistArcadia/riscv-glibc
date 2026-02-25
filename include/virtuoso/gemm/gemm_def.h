@@ -5,7 +5,7 @@
 #include <virtuoso/gemm/gemm_queue.h>
 
 // Wrapper for GEMM to be mapped for the hpthread
-void *sw_gemm(void *a);
+// void *sw_gemm(void *a);
 
 // Device-dependent probe function for baseline accelerator
 void gemm_probe(struct physical_accel_t *accel);

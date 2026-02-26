@@ -38,7 +38,7 @@
 #include <kernel-features.h>
 #include <libc-pointer-arith.h>
 #include <pthread-pids.h>
-#include <virtuoso/pthread_utils.h>
+#include <virtuoso/vam/vam_backend.h>
 
 #ifndef TLS_MULTIPLE_THREADS_IN_TCB
 /* Pointer to the corresponding variable in libc.  */
@@ -468,6 +468,7 @@ __pthread_initialize_minimal_internal (void)
   __is_smp = is_smp_system ();
 
   // __pthread_probe_accelerators();
+  vam_probe_accel();
 }
 strong_alias (__pthread_initialize_minimal_internal,
 	      __pthread_initialize_minimal)

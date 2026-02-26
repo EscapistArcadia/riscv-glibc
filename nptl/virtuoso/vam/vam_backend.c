@@ -52,7 +52,7 @@ unsigned util_epoch_count = 0;
 #endif
 
 // Function to wake up VAM for the first time
-void wakeup_vam() {
+void wakeup_vam(void) {
 	HIGH_DEBUG(printf("[VAM] Launching a new thread for VAM BACKEND!\n");)
     // Find the number of cores available
     cpu_online = sysconf(_SC_NPROCESSORS_ONLN);
@@ -92,7 +92,7 @@ void wakeup_vam() {
     pthread_attr_destroy(&attr);
 }
 
-void vam_probe_accel() {
+void vam_probe_accel(void) {
     // Open the devices directory to search for accels
     DIR *dir = opendir("/dev/");
     if (!dir) {
@@ -182,7 +182,7 @@ void *vam_run_backend(void *arg) {
     setpriority(PRIO_PROCESS, tid, nice_table[4]);
     #endif
     // populate the list of physical accelerators in the system
-    vam_probe_accel();
+    // vam_probe_accel();
     bool kill_vam = false;
 
     const float LB_RESET = 0.10;
@@ -620,7 +620,7 @@ void insert_cpu_thread(physical_accel_t *accel) {
 	cpu_thread_list = accel;
 }
 
-void vam_check_utilization() {
+void vam_check_utilization(void) {
     physical_accel_t *cur_accel = accel_list;
     while(cur_accel != NULL) {
         struct avu_mon_desc mon;
@@ -668,7 +668,7 @@ void vam_check_utilization() {
     }
 }
 
-float vam_check_load_balance() {
+float vam_check_load_balance(void) {
     // First, update the active utilization of each accelerator
     vam_check_utilization();
     // Check whether there is load imbalance across accelerators
@@ -695,7 +695,7 @@ float vam_check_load_balance() {
     return local_max_util - local_min_util;
 }
 
-bool vam_load_balance() {
+bool vam_load_balance(void) {
     // Contexts we are migrating (swap only if both accel are full)
     unsigned best_context_min, best_context_max; 
     struct pthread *best_th_max = NULL; struct pthread *any_th_max = NULL;
@@ -813,7 +813,7 @@ bool vam_load_balance() {
     return true;
 }
 
-void vam_log_utilization() {
+void vam_log_utilization(void) {
 #ifdef LITE_REPORT    
     physical_accel_t *cur_accel = accel_list;
     while (cur_accel != NULL) {
@@ -863,7 +863,7 @@ void vam_log_utilization() {
 #endif
 }
 
-void vam_print_report() {
+void vam_print_report(void) {
 #ifdef LITE_REPORT
     physical_accel_t *cur_accel = accel_list;
     while (cur_accel != NULL) {

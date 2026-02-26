@@ -13,8 +13,10 @@
 // Cooldown timer for migration
 #define TH_MOVE_COOLDOWN    78125000 // ~1 second
 
+void vam_probe_accel(void);
+
 // Function to wake up and create a thread of VAM
-void vam_wakeup();
+void vam_wakeup(void);
 // Main run method
 void *vam_run_backend(void *arg);
 // Search for accelerator candidates for the hpthread
@@ -34,14 +36,14 @@ void insert_physical_accel(physical_accel_t *accel);
 void insert_hpthread_cand(hpthread_cand_t *cand);
 void insert_cpu_thread(physical_accel_t *accel);
 // Update utilization metrics for all accelerators
-void vam_check_utilization();
+void vam_check_utilization(void);
 // Checks whether the load is balanced across all acclerators
-float vam_check_load_balance();
+float vam_check_load_balance(void);
 // Runs the load balancing algorithm across all accelerators
-bool vam_load_balance();
+bool vam_load_balance(void);
 // Read the current utilization and add to log
-void vam_log_utilization();
+void vam_log_utilization(void);
 // Print out the utilization metrics for the previous epochs in a pretty format
-void vam_print_report();
+void vam_print_report(void);
 
 #endif // __VAM_BACKEND_H__

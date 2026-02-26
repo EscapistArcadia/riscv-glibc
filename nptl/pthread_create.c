@@ -671,7 +671,7 @@ __pthread_create_2_1 (pthread_t *newthread, const pthread_attr_t *attr,
   if (iattr->flags & ATTR_FLAG_ACCELERATOR) {
     pd = (struct pthread *)malloc(sizeof(struct pthread));
     if (pd) {
-      pd->accel.id = accel_id++;
+      pd->accel.id = ++accel_id;
       pd->accel.is_active = false;
       pd->accel.prim = iattr->accel_attr.prim;
       pd->accel.mem = iattr->accel_attr.mem;
@@ -683,10 +683,12 @@ __pthread_create_2_1 (pthread_t *newthread, const pthread_attr_t *attr,
        * For now, if the user specifies an affinity domain, we ignore it and just
        * use the first one.
        */
-      for (int i = 0; i < CPU_SETSIZE; i++) {
-        if (CPU_ISSET(i, iattr->cpuset)) {
-          pd->accel.affinity = i;
-          break;
+      if (iattr->cpuset != NULL){
+        for (int i = 1; i < CPU_SETSIZE; i++) {
+          if (CPU_ISSET(i, iattr->cpuset)) {
+            pd->accel.affinity = i;
+            break;
+          }
         }
       }
       extern hpthread_intf_t intf;
@@ -717,6 +719,8 @@ __pthread_create_2_1 (pthread_t *newthread, const pthread_attr_t *attr,
 
   int err = ALLOCATE_STACK (iattr, &pd);
   int retval = 0;
+
+  pd->accel.id = -1;
 
   if (__glibc_unlikely (err != 0))
     /* Something went wrong.  Maybe a parameter of the attributes is

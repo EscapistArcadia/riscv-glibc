@@ -70,7 +70,7 @@ struct pthread_accel_t {
     unsigned user_id;
 };
 
-static const char *hpthread_get_prim_name(accel_prim_t p) {
+__attribute__((unused)) static const char *hpthread_get_prim_name(accel_prim_t p) {
     switch(p) {
         case PRIM_NONE : return (const char *) "NONE";
         case PRIM_AUDIO_FFT: return (const char *) "AUDIO_FFT";

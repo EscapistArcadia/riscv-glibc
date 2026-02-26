@@ -32,7 +32,8 @@
 #include <exit-thread.h>
 #include <default-sched.h>
 #include <futex-internal.h>
-#include <virtuoso/pthread_types.h>
+#include <virtuoso/pthread_utils.h>
+#include <virtuoso/vam/vam_backend.h>
 
 #include <shlib-compat.h>
 
@@ -676,6 +677,7 @@ __pthread_create_2_1 (pthread_t *newthread, const pthread_attr_t *attr,
       pd->accel.mem = iattr->accel_attr.mem;
       pd->accel.queue_ptr = iattr->accel_attr.queue_ptr;
       pd->accel.nprio = iattr->schedparam.sched_priority;
+      pd->accel.cpu_invoke = false; // TODO: Add an accelerator thread attribute for this
       /**
        * @todo Our code supports only one affinity domain for accelerator threads.
        * For now, if the user specifies an affinity domain, we ignore it and just
@@ -687,10 +689,26 @@ __pthread_create_2_1 (pthread_t *newthread, const pthread_attr_t *attr,
           break;
         }
       }
-      /** @todo goes to vam, wait, and goes back */
-      printf("Created accelerator thread with ID %u, prim %d, mem 0x%llx, queue_ptr 0x%llx, nprio %d, affinity %u\n",
-             pd->accel.id, pd->accel.prim, (unsigned long long)pd->accel.mem, (unsigned long long)pd->accel.queue_ptr,
-             pd->accel.nprio, pd->accel.affinity);
+      extern hpthread_intf_t intf;
+      extern void wakeup_vam(void);
+      // If VAM has not yet been started (i.e., interface is in vam_state_t::RESET, start one thread now)
+      if (hpthread_intf_swap(VAM_RESET, VAM_WAKEUP)) {
+        // Only one thread should enter here; remaining will wait for idle state
+        wakeup_vam();
+        hpthread_intf_set(VAM_IDLE);
+      }
+
+      // Check if the interface is IDLE. If yes, swap to BUSY. If not, block until it is
+      while (!hpthread_intf_swap(VAM_IDLE, VAM_BUSY)) SCHED_YIELD;
+      // Write the hpthread request to the interface
+      intf.th = pd;
+      // Set the interface state to CREATE
+      hpthread_intf_set(VAM_CREATE);
+      // Block until the request is complete (interface state is DONE), then swap to IDLE
+      while (!hpthread_intf_swap(VAM_DONE, VAM_IDLE)) SCHED_YIELD;
+      // printf("[HPTHREAD] Received hpthread %s.\n", pd->accel.name);
+      pd->accel.is_active = true;
+      pd->accel.th_last_move = get_counter();
       return 0;
     } else {
       return ENOMEM;

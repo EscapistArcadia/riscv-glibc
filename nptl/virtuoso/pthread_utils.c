@@ -143,4 +143,4 @@ void hpthread_intf_set(uint8_t set_value) {
 //     // }
 //     return 0;
 // }
-// /applications/test/04_fcnn_mt_pthread/opt.exe 1000 2 models/model_64_2.txt
+// /applications/test/04_fcnn_mt_pthread/opt.exe 10 2 models/model_64_2.txt

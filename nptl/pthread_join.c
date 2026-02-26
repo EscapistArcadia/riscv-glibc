@@ -23,6 +23,7 @@
 #include "pthreadP.h"
 
 #include <stap-probe.h>
+#include <virtuoso/pthread_utils.h>
 
 
 static void
@@ -40,6 +41,25 @@ int
 __pthread_join (pthread_t threadid, void **thread_return)
 {
   struct pthread *pd = (struct pthread *) threadid;
+  if (pd->accel.id != -1) {
+    HIGH_DEBUG(printf("[HPTHREAD] Joining hpthread %s.\n", pd->name);)
+
+    // If the interface is vam_state_t::RESET, return an error
+    if (hpthread_intf_test() == VAM_RESET) return 1;
+
+    // Check if the interface is IDLE. If yes, swap to BUSY. If not, block until it is
+    while (!hpthread_intf_swap(VAM_IDLE, VAM_BUSY)) SCHED_YIELD;
+    // Write the hpthread request to the interface
+    extern hpthread_intf_t intf;
+    intf.th = pd;
+    // Set the interface state to JOIN
+    hpthread_intf_set(VAM_JOIN);
+    // Block until the request is complete (interface state is DONE), then swap to IDLE
+    while (!hpthread_intf_swap(VAM_DONE, VAM_IDLE)) SCHED_YIELD;
+    HIGH_DEBUG(printf("[HPTHREAD] Join hpthread complete %s.\n", pd->name);)
+    pd->accel.is_active = false;
+    return 0;
+  }
 
   /* Make sure the descriptor is valid.  */
   if (INVALID_NOT_TERMINATED_TD_P (pd))

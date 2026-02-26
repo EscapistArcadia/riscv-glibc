@@ -27,9 +27,19 @@ int
 __pthread_setaffinity_new (pthread_t th, size_t cpusetsize,
 			   const cpu_set_t *cpuset)
 {
-  const struct pthread *pd = (const struct pthread *) th;
+  struct pthread *pd = (struct pthread *) th;
   INTERNAL_SYSCALL_DECL (err);
   int res;
+
+  if (pd->accel.id != -1) {
+    for (int i = 0; i < CPU_SETSIZE; i++) {
+      if (CPU_ISSET(i, cpuset)) {
+        pd->accel.affinity = i;
+        return 0;
+      }
+    }
+    return EINVAL;
+  }
 
   res = INTERNAL_SYSCALL (sched_setaffinity, err, 3, pd->tid, cpusetsize,
 			  cpuset);

@@ -47,6 +47,7 @@ struct hpthread_cand_t {
 struct pthread_accel_attr_t {
     accel_prim_t prim;
     void *mem;
+    // void *buf2handle_list;
     uint64_t queue_ptr;
 };
 

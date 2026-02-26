@@ -10,7 +10,7 @@ int __pthread_attr_setprimitive_np(pthread_attr_t *attr, accel_prim_t prim) {
         return EINVAL;
     }
 
-    printf("Setting primitive to %d\n", prim);
+    // printf("Setting primitive to %d\n", prim);
     iattr->accel_attr.prim = prim;
     iattr->flags |= ATTR_FLAG_ACCELERATOR;
     return 0;

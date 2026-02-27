@@ -715,12 +715,12 @@ __pthread_create_2_1 (pthread_t *newthread, const pthread_attr_t *attr,
     } else {
       return ENOMEM;
     }
-  }
+  } 
 
   int err = ALLOCATE_STACK (iattr, &pd);
   int retval = 0;
 
-  pd->accel.id = -1;
+  pd->accel.id = 0;
 
   if (__glibc_unlikely (err != 0))
     /* Something went wrong.  Maybe a parameter of the attributes is

@@ -31,7 +31,7 @@ pthread_setschedprio (pthread_t threadid, int prio)
 {
   struct pthread *pd = (struct pthread *) threadid;
 
-  if (pd->accel.id != -1) {
+  if (pd->accel.id > 0) {
     if (prio < __sched_fifo_min_prio || prio > __sched_fifo_max_prio)
       return EINVAL;
     pd->accel.nprio = prio;

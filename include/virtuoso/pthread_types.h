@@ -8,6 +8,9 @@
 
 /* TODO: should automate it inside Makefile CFLAGS */
 #define DO_PER_INVOKE
+#define ENABLE_SM
+#define ENABLE_VAM
+// #define MED_REPORT
 
 #define ATTR_FLAG_ACCELERATOR 0x0080
 #define primitive_is_valid(prim) ((prim) >= PRIM_NONE && (prim) <= PRIM_MAX)

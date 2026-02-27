@@ -199,36 +199,36 @@ void *vam_run_backend(void *arg) {
         switch(state) {
             case VAM_IDLE: {
                 // Examine the util across all accelerators in the system                
-                // float load_imbalance = vam_check_load_balance();
+                float load_imbalance = vam_check_load_balance();
                     
-                // #ifndef DISABLE_LB
-                // bool need_load_balance = false;
-                // if (load_imbalance > LB_TRIG && NUM_LB_RETRY > 0) {
-                //     need_load_balance = true;
-                // } else {
-                //     RESET_COUNTER--;
-                // }
+                #ifndef DISABLE_LB
+                bool need_load_balance = false;
+                if (load_imbalance > LB_TRIG && NUM_LB_RETRY > 0) {
+                    need_load_balance = true;
+                } else {
+                    RESET_COUNTER--;
+                }
 
-                // if (RESET_COUNTER == 0) {
-                //     RESET_COUNTER = 10;
-                //     NUM_LB_RETRY = MAX_LB_RETRY;
-                //     if (load_imbalance > LB_RESET) {
-                //         need_load_balance = true;
-                //     }
-                // }
+                if (RESET_COUNTER == 0) {
+                    RESET_COUNTER = 10;
+                    NUM_LB_RETRY = MAX_LB_RETRY;
+                    if (load_imbalance > LB_RESET) {
+                        need_load_balance = true;
+                    }
+                }
 
-                // if (need_load_balance) {
-                //     LOW_DEBUG(printf("[VAM] Trigerring load balancer, imbalance=%0.2f\n", load_imbalance);)
-                //     if (!vam_load_balance()) {
-                //         // If load balance was not successful, reduce retry count
-                //         NUM_LB_RETRY--;
-                //     } else {
-                //         // Successful load balance; reset retry count
-                //         NUM_LB_RETRY = MAX_LB_RETRY;
-                //     }
-                //     load_imbalance_reg = load_imbalance;
-                // }
-                // #endif
+                if (need_load_balance) {
+                    LOW_DEBUG(printf("[VAM] Trigerring load balancer, imbalance=%0.2f\n", load_imbalance);)
+                    if (!vam_load_balance()) {
+                        // If load balance was not successful, reduce retry count
+                        NUM_LB_RETRY--;
+                    } else {
+                        // Successful load balance; reset retry count
+                        NUM_LB_RETRY = MAX_LB_RETRY;
+                    }
+                    load_imbalance_reg = load_imbalance;
+                }
+                #endif
                 break;
             }
             case VAM_CREATE: {
@@ -537,9 +537,7 @@ void vam_configure_cpu(struct pthread *th, physical_accel_t *accel) {
 
 void vam_release_accel(struct pthread *th) {
     physical_accel_t *accel = th->accel.accel;
-    printf("[VAM] Releasing accel 0x%016lx.\n", (uint64_t) accel);
     unsigned context = th->accel.accel_context;
-    printf("[VAM] Releasing context %d of accel 0x%016lx.\n", context, (uint64_t) accel);
     LOW_DEBUG(printf("[VAM] Releasing accel %s:%d for hpthread %s\n", physical_accel_get_name(accel), context, hpthread_get_name(th));)
     // Free the allocated context.
     bitmap_reset(accel->valid_contexts, context);

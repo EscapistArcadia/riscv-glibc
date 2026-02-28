@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <pthreadP.h>
 
-int __pthread_attr_setsmqueue_np(pthread_attr_t *attr, uint64_t queue_ptr) {
+int __pthread_attr_setsmqueue_np(pthread_attr_t *attr, unsigned queue_ptr) {
     assert(sizeof (*attr) >= sizeof (struct pthread_attr));
 
     struct pthread_attr *iattr = (struct pthread_attr *) attr;

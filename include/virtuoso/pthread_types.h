@@ -51,14 +51,14 @@ struct pthread_accel_attr_t {
     accel_prim_t prim;
     void *mem;
     // void *buf2handle_list;
-    uint64_t queue_ptr;
+    unsigned queue_ptr;
 };
 
 struct pthread_accel_t {
     unsigned int id;
     accel_prim_t prim;
     void *mem;
-    uint64_t queue_ptr;
+    unsigned queue_ptr;
     bool *kill_pthread;
     unsigned nprio;
     float th_util;

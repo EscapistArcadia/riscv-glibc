@@ -711,6 +711,7 @@ __pthread_create_2_1 (pthread_t *newthread, const pthread_attr_t *attr,
       // printf("[HPTHREAD] Received hpthread %s.\n", pd->accel.name);
       pd->accel.is_active = true;
       pd->accel.th_last_move = get_counter();
+      *newthread = (pthread_t) pd;
       return 0;
     } else {
       return ENOMEM;

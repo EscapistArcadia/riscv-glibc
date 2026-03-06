@@ -515,9 +515,9 @@ void vam_configure_cpu_invoke(struct pthread *th, physical_accel_t *accel, unsig
 void vam_configure_cpu(struct pthread *th, physical_accel_t *accel) {
     LOW_DEBUG(printf("[VAM] Configuring CPU for hpthread %s\n", hpthread_get_name(th));)
     // Find SW kernel for this thread
-    void *(*sw_kernel)(void *);
+    void *(*sw_kernel)(void *) = NULL;
     switch(th->accel.prim) {
-        case PRIM_GEMM: sw_kernel = NULL; break;
+        case PRIM_GEMM: sw_kernel = th->accel.sw_kernel; break;
         default: break;
     }    
     // Create a new CPU thread for the SW implementation of this node.

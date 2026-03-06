@@ -71,6 +71,8 @@ struct pthread_accel_t {
     // Debug variables
     char name[100];
     unsigned user_id;
+
+    void *(*sw_kernel)(void *);
 };
 
 __attribute__((unused)) static const char *hpthread_get_prim_name(accel_prim_t p) {

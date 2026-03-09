@@ -41,7 +41,7 @@ int
 __pthread_join (pthread_t threadid, void **thread_return)
 {
   struct pthread *pd = (struct pthread *) threadid;
-  if (pd->accel.id != 0) {
+  if (pd->accel != NULL) {
     HIGH_DEBUG(printf("[HPTHREAD] Joining hpthread %s.\n", pd->name);)
 
     // If the interface is vam_state_t::RESET, return an error
@@ -57,7 +57,7 @@ __pthread_join (pthread_t threadid, void **thread_return)
     // Block until the request is complete (interface state is DONE), then swap to IDLE
     while (!hpthread_intf_swap(VAM_DONE, VAM_IDLE)) SCHED_YIELD;
     HIGH_DEBUG(printf("[HPTHREAD] Join hpthread complete %s.\n", pd->name);)
-    pd->accel.is_active = false;
+    pd->accel->is_active = false;
     // free(pd);
     return 0;
   }

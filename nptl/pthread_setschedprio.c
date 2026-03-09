@@ -31,12 +31,12 @@ pthread_setschedprio (pthread_t threadid, int prio)
 {
   struct pthread *pd = (struct pthread *) threadid;
 
-  if (pd->accel.id > 0) {
+  if (pd->accel != NULL) {
     if (prio < __sched_fifo_min_prio || prio > __sched_fifo_max_prio)
       return EINVAL;
-    pd->accel.nprio = prio;
+    pd->accel->nprio = prio;
 
-    if (pd->accel.is_active) {
+    if (pd->accel->is_active) {
       extern hpthread_intf_t intf;
       HIGH_DEBUG(printf("[HPTHREAD] Requested change of priority to %d for hpthread %s.\n", prio, pd->name);)
       // Check if the interface is IDLE. If yes, swap to BUSY. If not, block until it is

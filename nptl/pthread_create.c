@@ -670,14 +670,15 @@ __pthread_create_2_1 (pthread_t *newthread, const pthread_attr_t *attr,
   static int accel_id = 0;
   if (iattr->flags & ATTR_FLAG_ACCELERATOR) {
     pd = (struct pthread *)malloc(sizeof(struct pthread));
+    pd->accel = (struct pthread_accel_t *)malloc(sizeof(struct pthread_accel_t));
     if (pd) {
-      pd->accel.id = ++accel_id;
-      pd->accel.is_active = false;
-      pd->accel.prim = iattr->accel_attr.prim;
-      pd->accel.mem = iattr->accel_attr.mem;
-      pd->accel.queue_ptr = iattr->accel_attr.queue_ptr;
-      pd->accel.nprio = iattr->schedparam.sched_priority;
-      pd->accel.cpu_invoke = false; // TODO: Add an accelerator thread attribute for this
+      pd->accel->id = ++accel_id;
+      pd->accel->is_active = false;
+      pd->accel->prim = iattr->accel_attr.prim;
+      pd->accel->mem = iattr->accel_attr.mem;
+      pd->accel->queue_ptr = iattr->accel_attr.queue_ptr;
+      pd->accel->nprio = iattr->schedparam.sched_priority;
+      pd->accel->cpu_invoke = false; // TODO: Add an accelerator thread attribute for this
       /**
        * @todo Our code supports only one affinity domain for accelerator threads.
        * For now, if the user specifies an affinity domain, we ignore it and just
@@ -686,10 +687,12 @@ __pthread_create_2_1 (pthread_t *newthread, const pthread_attr_t *attr,
       if (iattr->cpuset != NULL){
         for (int i = 1; i < CPU_SETSIZE; i++) {
           if (CPU_ISSET(i, iattr->cpuset)) {
-            pd->accel.affinity = i;
+            pd->accel->affinity = i;
             break;
           }
         }
+      } else {
+        pd->accel->affinity = 0;
       }
       extern hpthread_intf_t intf;
       extern void wakeup_vam(void);
@@ -708,10 +711,10 @@ __pthread_create_2_1 (pthread_t *newthread, const pthread_attr_t *attr,
       hpthread_intf_set(VAM_CREATE);
       // Block until the request is complete (interface state is DONE), then swap to IDLE
       while (!hpthread_intf_swap(VAM_DONE, VAM_IDLE)) SCHED_YIELD;
-      // printf("[HPTHREAD] Received hpthread %s.\n", pd->accel.name);
-      pd->accel.is_active = true;
-      pd->accel.th_last_move = get_counter();
-      pd->accel.sw_kernel = start_routine;
+      // printf("[HPTHREAD] Received hpthread %s.\n", pd->accel->name);
+      pd->accel->is_active = true;
+      pd->accel->th_last_move = get_counter();
+      pd->accel->sw_kernel = start_routine;
       *newthread = (pthread_t) pd;
       return 0;
     } else {
@@ -722,7 +725,7 @@ __pthread_create_2_1 (pthread_t *newthread, const pthread_attr_t *attr,
   int err = ALLOCATE_STACK (iattr, &pd);
   int retval = 0;
 
-  pd->accel.id = 0;
+  pd->accel = NULL;
 
   if (__glibc_unlikely (err != 0))
     /* Something went wrong.  Maybe a parameter of the attributes is

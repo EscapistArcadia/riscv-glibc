@@ -397,7 +397,7 @@ struct pthread
   /* Resolver state.  */
   struct __res_state res;
 
-  struct pthread_accel_t accel;
+  struct pthread_accel_t *accel;
 
   /* This member must be last.  */
   char end_padding[];

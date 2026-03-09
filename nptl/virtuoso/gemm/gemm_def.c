@@ -59,8 +59,8 @@ void *gemm_invoke(void *a) {
     uint64_t *context_runtime = &args->active_cycles; // for VAM
     struct pthread *th = accel->th[context];
     // struct pthread_args_t *h_args = th->args;
-    unsigned *mem = (unsigned *) th->accel.mem;
-    sm_queue_t *q = (sm_queue_t *) &mem[th->accel.queue_ptr];
+    unsigned *mem = (unsigned *) th->accel->mem;
+    sm_queue_t *q = (sm_queue_t *) &mem[th->accel->queue_ptr];
     LOW_DEBUG(printf("[INVOKE] Started thread for invoking GeMM on %s:%d!\n", accel->devname, context);)
     // Set queue to busy
     if (__atomic_load_n(&(q->stat), __ATOMIC_SEQ_CST) == QUEUE_BUSY) { SCHED_YIELD; };
@@ -70,7 +70,7 @@ void *gemm_invoke(void *a) {
     #ifndef DO_SCHED_RR
     // Set niceness based on priority
     pid_t tid = syscall(__NR_gettid);
-    unsigned prio = th->accel.nprio;
+    unsigned prio = th->accel->nprio;
     setpriority(PRIO_PROCESS, tid, nice_table[prio - 1]);
     HIGH_DEBUG(printf("[INVOKE] Set niceness to %d for %s:%d!\n", nice_table[prio - 1], accel->devname, context);)
     #endif
@@ -180,8 +180,8 @@ void *gemm_invoke(void *a) {
         for (int i = 0; i < MAX_CONTEXTS; i++) {
             if (!bitmap_test(accel->valid_contexts, i) && bitmap_test(*valid_contexts_ack, i)) {
                 // struct pthread_args_t *h_args = th[i]->args;
-                unsigned *mem = (unsigned *) th[i]->accel.mem;
-                sm_queue_t *q = (sm_queue_t *) &mem[th[i]->accel.queue_ptr];
+                unsigned *mem = (unsigned *) th[i]->accel->mem;
+                sm_queue_t *q = (sm_queue_t *) &mem[th[i]->accel->queue_ptr];
                 __atomic_store_n(&(q->stat), QUEUE_AVAIL, __ATOMIC_SEQ_CST);
                 bitmap_reset(*valid_contexts_ack, i);
                 HIGH_DEBUG(printf("[INVOKE] Released context %d on %s for struct pthread %s\n", i, accel->devname, struct pthread_get_name(th[i]));)
@@ -201,7 +201,7 @@ void *gemm_invoke(void *a) {
                 context_vruntime[new_context] = UINT64_MAX;
                 vruntime_scale[new_context] = 1;
             } else {
-                unsigned nprio = th[new_context]->accel.nprio;
+                unsigned nprio = th[new_context]->accel->nprio;
                 if (bitmap_test(accel->valid_contexts, new_context) && nprio < min_nprio && context_vruntime[new_context] == min_vruntime) {
                     min_nprio = nprio;
                     current_context = new_context;
@@ -221,8 +221,8 @@ void *gemm_invoke(void *a) {
         for (int i = 0; i < MAX_CONTEXTS; i++) {
             if (bitmap_test(accel->valid_contexts, i) && !bitmap_test(*valid_contexts_ack, i)) {
                 // struct pthread_args_t *h_args = th[i]->args;
-                unsigned *mem = (unsigned *) th[i]->accel.mem;
-                sm_queue_t *q = (sm_queue_t *) &mem[th[i]->accel.queue_ptr];
+                unsigned *mem = (unsigned *) th[i]->accel->mem;
+                sm_queue_t *q = (sm_queue_t *) &mem[th[i]->accel->queue_ptr];
                 if (__atomic_load_n(&(q->stat), __ATOMIC_SEQ_CST) == QUEUE_BUSY) { SCHED_YIELD; continue; };
                 __atomic_store_n(&(q->stat), QUEUE_BUSY, __ATOMIC_SEQ_CST);
                 bitmap_set(*valid_contexts_ack, i);
@@ -251,9 +251,9 @@ void *gemm_invoke(void *a) {
         }
         // Read arguments for next context
         // struct pthread_args_t *h_args = th[current_context]->args;
-        unsigned *mem = (unsigned *) th[current_context]->accel.mem;
-        sm_queue_t *q = (sm_queue_t *) &mem[th[current_context]->accel.queue_ptr];
-        unsigned nprio = th[current_context]->accel.nprio;
+        unsigned *mem = (unsigned *) th[current_context]->accel->mem;
+        sm_queue_t *q = (sm_queue_t *) &mem[th[current_context]->accel->queue_ptr];
+        unsigned nprio = th[current_context]->accel->nprio;
         clock_gettime(CLOCK_THREAD_CPUTIME_ID, &start_time);
 
         // Is task queue empty?

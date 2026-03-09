@@ -29,6 +29,12 @@ __pthread_attr_setschedparam (pthread_attr_t *attr,
   assert (sizeof (*attr) >= sizeof (struct pthread_attr));
   struct pthread_attr *iattr = (struct pthread_attr *) attr;
 
+  if (iattr->flags & ATTR_FLAG_ACCELERATOR) {
+    memcpy(&iattr->schedparam, param, sizeof(struct sched_param));
+    iattr->flags |= ATTR_FLAG_SCHED_SET;
+    return 0;
+  }
+
   int ret = check_sched_priority_attr (param->sched_priority,
 				       iattr->schedpolicy);
   if (ret)

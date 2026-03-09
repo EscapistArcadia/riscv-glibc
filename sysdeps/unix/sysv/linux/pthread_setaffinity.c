@@ -31,10 +31,10 @@ __pthread_setaffinity_new (pthread_t th, size_t cpusetsize,
   INTERNAL_SYSCALL_DECL (err);
   int res;
 
-  if (pd->accel.id > 0) {
+  if (pd->accel > 0) {
     for (int i = 0; i < CPU_SETSIZE; i++) {
       if (CPU_ISSET(i, cpuset)) {
-        pd->accel.affinity = i;
+        pd->accel->affinity = i;
         return 0;
       }
     }

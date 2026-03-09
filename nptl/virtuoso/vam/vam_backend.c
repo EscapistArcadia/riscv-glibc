@@ -242,7 +242,7 @@ void *vam_run_backend(void *arg) {
                 break;
             }
             case VAM_SETPRIO: {
-                HIGH_DEBUG(printf("[VAM] Received a request for changing priority hpthread %s to %d\n", hpthread_get_name(intf.th), intf.th->accel.nprio);)
+                HIGH_DEBUG(printf("[VAM] Received a request for changing priority hpthread %s to %d\n", hpthread_get_name(intf.th), intf.th->accel->nprio);)
                 vam_setprio_accel(intf.th);
                 break;
             }
@@ -272,7 +272,7 @@ void *vam_run_backend(void *arg) {
 }
 
 void vam_search_accel(struct pthread *th) {
-    HIGH_DEBUG(printf("[VAM] Searching accelerator for hpthread %s with affinity to ID %d\n", hpthread_get_name(th), th->accel.affinity);)
+    HIGH_DEBUG(printf("[VAM] Searching accelerator for hpthread %s with affinity to ID %d\n", hpthread_get_name(th), th->accel->affinity);)
     // First, update the active utilization of each accelerator
     vam_check_utilization();
 
@@ -289,44 +289,49 @@ void vam_search_accel(struct pthread *th) {
             printf("\n[VAM] Checking device %s.\n", physical_accel_get_name(cur_accel));
             physical_accel_dump(cur_accel);
         )
-        if (th->accel.affinity != 0 && (th->accel.affinity - 1) == cur_accel->accel_id) {
-            if (cur_accel->prim == th->accel.prim && !bitmap_all(cur_accel->valid_contexts)) {
+        if (th->accel->affinity != 0 && (th->accel->affinity - 1) == cur_accel->accel_id) {
+            if (cur_accel->prim == th->accel->prim && !bitmap_all(cur_accel->valid_contexts)) {
                 candidate_accel = cur_accel;
                 candidate_util = cur_accel->effective_util;
                 candidate_contexts = cur_accel->valid_contexts;
                 accel_allocated = true;
                 HIGH_DEBUG(printf("[VAM] Device %s matches affinity and is a candidate!\n", physical_accel_get_name(cur_accel));)
                 break;
-            } else if (cur_accel->prim == th->accel.prim) {
+            } else if (cur_accel->prim == th->accel->prim) {
                 HIGH_DEBUG(printf("[VAM] Device %s matches affinity but is not available.\n", physical_accel_get_name(cur_accel));)
             } else {
                 HIGH_DEBUG(printf("[VAM] Device %s does not match primitive.\n", physical_accel_get_name(cur_accel));)
             }
         }
         // If the thread or accel requires CPU invocation, the other must too
-        if (th->accel.cpu_invoke ^ cur_accel->cpu_invoke) {
+        if (th->accel->cpu_invoke ^ cur_accel->cpu_invoke) {
 		    cur_accel = cur_accel->next;
             continue;
         }
         // Is the accelerator suitable and not fully utilized for this primitive?
-        if (cur_accel->prim == th->accel.prim && !bitmap_all(cur_accel->valid_contexts)) {
+        if (cur_accel->prim == th->accel->prim && !bitmap_all(cur_accel->valid_contexts)) {
             // Check if this accelerator's total load is less than the previous min or fewer contexts (with similar util)
+            // printf("[VAM] cur_accel-> effective_util = %0.2f, candidate_util = %0.2f, cur_accel->valid_contexts = %u, candidate_contexts = %u\n", cur_accel->effective_util, candidate_util, cur_accel->valid_contexts, candidate_contexts);
+            // printf("[VAM] cur_accel->effective_util < candidate_util - 0.1 = %s, fabsf(cur_accel->effective_util - candidate_util) <= 0.1 = %s, cur_accel->valid_contexts < candidate_contexts = %s\n", (cur_accel->effective_util < candidate_util - 0.1) ? "true" : "false", (fabsf(cur_accel->effective_util - candidate_util) <= 0.1) ? "true" : "false", (cur_accel->valid_contexts < candidate_contexts) ? "true" : "false");
             if ((cur_accel->effective_util < candidate_util - 0.1) ||
                 (fabsf(cur_accel->effective_util - candidate_util) <= 0.1 && (cur_accel->valid_contexts < candidate_contexts))) {
                 candidate_accel = cur_accel;
                 candidate_util = cur_accel->effective_util;
                 candidate_contexts = cur_accel->valid_contexts;
-                HIGH_DEBUG(printf("[VAM] Device %s is a candidate!\n", physical_accel_get_name(cur_accel));)
+                // printf("[VAM] Device 0x%016llx is a candidate!\n", (unsigned long long) cur_accel);
+            } else {
+                // printf("[VAM] Device 0x%016llx is not a better candidate than current candidate 0x%016llx.\n", (unsigned long long) cur_accel, (unsigned long long) candidate_accel);
             }
             // Found one accelerator!
             accel_allocated = true;
         }
 		cur_accel = cur_accel->next;
     }
-    HIGH_DEBUG(printf("[VAM] Candidate for hpthread %s = %s!\n", hpthread_get_name(th), physical_accel_get_name(candidate_accel));)
+    // printf("[VAM] Candidate for hpthread 0x%016llx = 0x%016llx!\n", (unsigned long long) th, (unsigned long long) candidate_accel);
     // Identify the valid context to allocate
     unsigned cur_context = 0;
     if (accel_allocated) {
+        // printf("Allocating accelerator 0x%016llx ...\n", (unsigned long long) candidate_accel);
         for (unsigned i = 0; i < MAX_CONTEXTS; i++) {
             if (!bitmap_test(candidate_accel->valid_contexts, i)) {
                 cur_context = i;
@@ -346,13 +351,14 @@ void vam_search_accel(struct pthread *th) {
     }
     // Update the phy<->virt mapping for the chosen context with the hpthread
     candidate_accel->th[cur_context] = th;
-    th->accel.accel = candidate_accel;
-    th->accel.accel_context = cur_context;
+    // printf("Assigned 0x%016llx to pthread 0x%016llx\n", (unsigned long long) candidate_accel, (unsigned long long) th);
+    th->accel->accel = candidate_accel;
+    th->accel->accel_context = cur_context;
     // Mark the context as allocated.
     bitmap_set(candidate_accel->valid_contexts, cur_context);
     // Configure the device allocated
     if (accel_allocated) {
-        if (th->accel.cpu_invoke) {
+        if (th->accel->cpu_invoke) {
             vam_configure_cpu_invoke(th, candidate_accel, cur_context);
         } else {
             vam_configure_accel(th, candidate_accel, cur_context);
@@ -365,7 +371,7 @@ void vam_search_accel(struct pthread *th) {
 void vam_configure_accel(struct pthread *th, physical_accel_t *accel, unsigned context) {
     HIGH_DEBUG(printf("[VAM] Configuring accel...\n");)
     // Get the mem handle for the hpthread
-    void *mem = th->accel.mem;
+    void *mem = th->accel->mem;
     // ESP defined data type for the pointer to the memory pool for accelerators.
     enum contig_alloc_policy policy;
     contig_handle_t *handle = lookup_handle(mem, &policy);
@@ -385,8 +391,8 @@ void vam_configure_accel(struct pthread *th, physical_accel_t *accel, unsigned c
         esp_access_desc->src_offset = 0;
         esp_access_desc->dst_offset = 0;
         esp_access_desc->context_id = context;
-        esp_access_desc->context_queue_ptr = th->accel.queue_ptr;
-        esp_access_desc->context_nprio = th->accel.nprio;
+        esp_access_desc->context_queue_ptr = th->accel->queue_ptr;
+        esp_access_desc->context_nprio = th->accel->nprio;
         esp_access_desc->valid_contexts = accel->valid_contexts;
         esp_access_desc->sched_period = AVU_SCHED_PERIOD;
     }
@@ -418,7 +424,7 @@ void vam_configure_cpu_invoke(struct pthread *th, physical_accel_t *accel, unsig
     args->accel = accel;
     // Find SW kernel for this thread
     void *(*sw_kernel)(void *);
-    switch(th->accel.prim) {
+    switch(th->accel->prim) {
         case PRIM_GEMM: sw_kernel = gemm_invoke; break;
         default: break;
     }    
@@ -470,7 +476,7 @@ void vam_configure_cpu_invoke(struct pthread *th, physical_accel_t *accel, unsig
         accel->kill_pthread = false;
         // Find SW kernel for this thread
         void *(*sw_kernel)(void *);
-        switch(th->accel.prim) {
+        switch(th->accel->prim) {
             case PRIM_GEMM: sw_kernel = gemm_invoke; break;
             default: break;
         }    
@@ -515,14 +521,14 @@ void vam_configure_cpu_invoke(struct pthread *th, physical_accel_t *accel, unsig
 void vam_configure_cpu(struct pthread *th, physical_accel_t *accel) {
     LOW_DEBUG(printf("[VAM] Configuring CPU for hpthread %s\n", hpthread_get_name(th));)
     // Find SW kernel for this thread
-    void *(*sw_kernel)(void *) = NULL;
-    switch(th->accel.prim) {
-        case PRIM_GEMM: sw_kernel = th->accel.sw_kernel; break;
-        default: break;
-    }    
+    void *(*sw_kernel)(void *) = th->accel->sw_kernel;
+    // switch(th->accel->prim) {
+    //     case PRIM_GEMM: sw_kernel = th->accel->sw_kernel; break;
+    //     default: break;
+    // }    
     // Create a new CPU thread for the SW implementation of this node.
     pthread_t cpu_thread;
-    th->accel.kill_pthread = (bool *) malloc (sizeof(bool)); *(th->accel.kill_pthread) = false;
+    th->accel->kill_pthread = (bool *) malloc (sizeof(bool)); *(th->accel->kill_pthread) = false;
     if (pthread_create(&cpu_thread, NULL, sw_kernel, (void *) NULL) != 0) { // TODO: set arguments
         perror("Failed to create CPU thread\n");
     }
@@ -536,13 +542,13 @@ void vam_configure_cpu(struct pthread *th, physical_accel_t *accel) {
 }
 
 void vam_release_accel(struct pthread *th) {
-    physical_accel_t *accel = th->accel.accel;
-    unsigned context = th->accel.accel_context;
+    physical_accel_t *accel = th->accel->accel;
+    unsigned context = th->accel->accel_context;
     LOW_DEBUG(printf("[VAM] Releasing accel %s:%d for hpthread %s\n", physical_accel_get_name(accel), context, hpthread_get_name(th));)
     // Free the allocated context.
     bitmap_reset(accel->valid_contexts, context);
 
-    if (th->accel.cpu_invoke) {
+    if (th->accel->cpu_invoke) {
 #ifdef DO_PER_INVOKE
         accel->args[context]->kill_pthread = true;
         pthread_join(accel->cpu_thread[context], NULL);
@@ -553,7 +559,7 @@ void vam_release_accel(struct pthread *th) {
 #endif
     } else {
         if (accel->prim == PRIM_NONE) {
-            *(th->accel.kill_pthread) = true;
+            *(th->accel->kill_pthread) = true;
 #ifdef DO_PER_INVOKE
             pthread_join(accel->cpu_thread[0], NULL);
 #else
@@ -579,18 +585,18 @@ void vam_release_accel(struct pthread *th) {
 
     // Delete the entry for this context in the phy<->virt mapping
     accel->th[context] = NULL;
-    th->accel.accel = NULL;
+    th->accel->accel = NULL;
 }
 
 void vam_setprio_accel(struct pthread *th) {
-    physical_accel_t *accel = th->accel.accel;
-    unsigned context = th->accel.accel_context;
-    LOW_DEBUG(printf("[VAM] Setting priority of accel %s:%d to %d for hpthread %s\n", physical_accel_get_name(accel), context, th->accel.nprio, hpthread_get_name(th));)
+    physical_accel_t *accel = th->accel->accel;
+    unsigned context = th->accel->accel_context;
+    LOW_DEBUG(printf("[VAM] Setting priority of accel %s:%d to %d for hpthread %s\n", physical_accel_get_name(accel), context, th->accel->nprio, hpthread_get_name(th));)
 
     struct esp_access *esp_access_desc = accel->esp_access_desc;
     {
         esp_access_desc->context_id = context;
-        esp_access_desc->context_nprio = th->accel.nprio;
+        esp_access_desc->context_nprio = th->accel->nprio;
         esp_access_desc->ioctl_cm = ESP_IOCTL_ACC_SET_PRIO;
     }
     if (ioctl(accel->fd, accel->ioctl_cm, esp_access_desc)) {
@@ -649,21 +655,23 @@ void vam_check_utilization(void) {
                 // Get the utilization in the previous monitor period
                 uint64_t elapsed_cycles = get_counter() - cur_accel->context_start_cycles[i];
                 uint64_t util_cycles = mon_extended[i] - cur_accel->context_active_cycles[i];
+                // printf("[VAM] cur_accel = 0x%016llx, elapsed_cycles = %llu, util_cycles = %llu\n", (unsigned long long) cur_accel, (unsigned long long) elapsed_cycles, (unsigned long long) util_cycles);
                 float util = (float) util_cycles/elapsed_cycles;
                 // Set the cycles for the next period
                 cur_accel->context_start_cycles[i] = get_counter();
                 cur_accel->context_active_cycles[i] = mon_extended[i];
                 cur_accel->context_util[i] = util;
                 struct pthread *th = cur_accel->th[i];
-                th->accel.th_util = util;
-                cur_accel->effective_util += util / th->accel.nprio;
+                th->accel->th_util = util;
+                cur_accel->effective_util += util / th->accel->nprio;
+                // printf("[VAM] Device 0x%016llx, context %d, util = %0.2f%%, nprio = %d\n", (unsigned long long) cur_accel, i, util * 100, th->accel->nprio);
 
                 HIGH_DEBUG(
-                    printf("C%d(%d)=%05.2f%%, ", i, th->accel.nprio, util * 100);
+                    printf("C%d(%d)=%05.2f%%, ", i, th->accel->nprio, util * 100);
                 )
             }
         }
-        HIGH_DEBUG(printf("e.util=%05.2f%%\n", cur_accel->effective_util * 100);)
+        // printf("e.util=%05.2f%%\n", cur_accel->effective_util * 100);
 		cur_accel = cur_accel->next;
     }
 }
@@ -708,8 +716,8 @@ bool vam_load_balance(void) {
     for (int i = 0; i < MAX_CONTEXTS; i++) {
         if (bitmap_test(max_util_accel->valid_contexts, i)) {
             struct pthread *th = max_util_accel->th[i];
-            uint64_t t_last_move = get_counter() - th->accel.th_last_move;
-            float th_util = th->accel.th_util / th->accel.nprio;
+            uint64_t t_last_move = get_counter() - th->accel->th_last_move;
+            float th_util = th->accel->th_util / th->accel->nprio;
             if (th_util > any_util_max) {
                 any_th_max = th;
                 any_util_max = th_util;
@@ -721,8 +729,8 @@ bool vam_load_balance(void) {
         }
     }
     move_th_max = best_th_max ? best_th_max : any_th_max;
-    best_context_max = move_th_max->accel.accel_context;
-    move_th_max->accel.th_last_move = get_counter();
+    best_context_max = move_th_max->accel->accel_context;
+    move_th_max->accel->th_last_move = get_counter();
 
     // Check if there exist any valid contexts on least loaded accel
     if (bitmap_any(min_util_accel->valid_contexts)) {
@@ -730,8 +738,8 @@ bool vam_load_balance(void) {
         for (int i = 0; i < MAX_CONTEXTS; i++) {
             if (bitmap_test(min_util_accel->valid_contexts, i)) {
                 struct pthread *th = min_util_accel->th[i];
-                uint64_t t_last_move = get_counter() - th->accel.th_last_move;
-                float th_util = th->accel.th_util / th->accel.nprio;
+                uint64_t t_last_move = get_counter() - th->accel->th_last_move;
+                float th_util = th->accel->th_util / th->accel->nprio;
                 if (th_util < any_util_min) {
                     any_th_min = th;
                     any_util_min = th_util;
@@ -743,8 +751,8 @@ bool vam_load_balance(void) {
             }
         }
         move_th_min = best_th_min ? best_th_min : any_th_min;
-        best_context_min = move_th_min->accel.accel_context;
-        move_th_min->accel.th_last_move = get_counter();
+        best_context_min = move_th_min->accel->accel_context;
+        move_th_min->accel->th_last_move = get_counter();
         no_min_contexts = true;
     } else {
         // if yes, identify one context to allocate
@@ -759,11 +767,11 @@ bool vam_load_balance(void) {
     // Roughly check if the util improvement is worth the migration
     float local_max_util = max_util;
     float local_min_util = min_util;
-    local_max_util -= move_th_max->accel.th_util / move_th_max->accel.nprio; local_min_util += move_th_max->accel.th_util / move_th_max->accel.nprio;
+    local_max_util -= move_th_max->accel->th_util / move_th_max->accel->nprio; local_min_util += move_th_max->accel->th_util / move_th_max->accel->nprio;
     LOW_DEBUG(printf("[VAM] Map %s from %s:%d to %s:%d\n", hpthread_get_name(move_th_max),
                         physical_accel_get_name(max_util_accel), best_context_max, physical_accel_get_name(min_util_accel), best_context_min);)
     if (no_min_contexts) {
-        local_max_util += move_th_min->accel.th_util / move_th_min->accel.nprio; local_min_util -= move_th_min->accel.th_util / move_th_min->accel.nprio;
+        local_max_util += move_th_min->accel->th_util / move_th_min->accel->nprio; local_min_util -= move_th_min->accel->th_util / move_th_min->accel->nprio;
         LOW_DEBUG(printf("[VAM] Map %s from %s:%d to %s:%d\n", hpthread_get_name(move_th_min),
                             physical_accel_get_name(min_util_accel), best_context_min, physical_accel_get_name(max_util_accel), best_context_max);)
     }
@@ -785,12 +793,12 @@ bool vam_load_balance(void) {
 
     // Update the phy<->virt mapping for the chosen context with the hpthread
     min_util_accel->th[best_context_min] = move_th_max;
-    move_th_max->accel.accel = min_util_accel;
-    move_th_max->accel.accel_context = best_context_min;
+    move_th_max->accel->accel = min_util_accel;
+    move_th_max->accel->accel_context = best_context_min;
     // Mark the context as allocated.
     bitmap_set(min_util_accel->valid_contexts, best_context_min);
     // Configure the device allocated
-    if (move_th_max->accel.cpu_invoke) {
+    if (move_th_max->accel->cpu_invoke) {
         vam_configure_cpu_invoke(move_th_max, min_util_accel, best_context_min);
     } else {
         vam_configure_accel(move_th_max, min_util_accel, best_context_min);
@@ -799,12 +807,12 @@ bool vam_load_balance(void) {
     if (no_min_contexts) {
         // Update the phy<->virt mapping for the chosen context with the hpthread
         max_util_accel->th[best_context_max] = move_th_min;
-        move_th_min->accel.accel = max_util_accel;
-        move_th_min->accel.accel_context = best_context_max;
+        move_th_min->accel->accel = max_util_accel;
+        move_th_min->accel->accel_context = best_context_max;
         // Mark the context as allocated.
         bitmap_set(max_util_accel->valid_contexts, best_context_max);
         // Configure the device allocated
-        if (move_th_min->accel.cpu_invoke) {
+        if (move_th_min->accel->cpu_invoke) {
             vam_configure_cpu_invoke(move_th_min, max_util_accel, best_context_max);
         } else {
             vam_configure_accel(move_th_min, max_util_accel, best_context_max);
@@ -844,7 +852,7 @@ void vam_log_utilization(void) {
         for (int i = 0; i < MAX_CONTEXTS; i++) {
             if (bitmap_test(cur_accel->valid_contexts, i)) {
                 new_entry->util[i] = cur_accel->context_util[i];
-                new_entry->id[i] = cur_accel->th[i]->accel.user_id;
+                new_entry->id[i] = cur_accel->th[i]->accel->user_id;
                 LOW_DEBUG( printf("C%d(%d)=%05.2f%%, ", i, new_entry->id[i], new_entry->util[i] * 100); )
                 total_util += cur_accel->context_util[i];
             } else {

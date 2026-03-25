@@ -647,7 +647,7 @@ check_stacksize_attr (size_t st)
   return EINVAL;
 }
 
-extern int __pthread_attr_setprimitive_np(pthread_attr_t *attr, accel_primitive_t prim) attribute_hidden;
+extern int __pthread_attr_setprimitive_np(pthread_attr_t *attr, accel_primitive_t prim, int cpu_invoke) attribute_hidden;
 extern int __pthread_attr_setmmiobase_np(pthread_attr_t *attr, void *mem, void *buf2handle_list) attribute_hidden;
 extern int __pthread_attr_setsmqueue_np(pthread_attr_t *attr, unsigned queue_ptr) attribute_hidden;
 

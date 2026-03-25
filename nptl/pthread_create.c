@@ -678,7 +678,7 @@ __pthread_create_2_1 (pthread_t *newthread, const pthread_attr_t *attr,
       pd->accel->mem = iattr->accel_attr.mem;
       pd->accel->queue_ptr = iattr->accel_attr.queue_ptr;
       pd->accel->nprio = iattr->schedparam.sched_priority;
-      pd->accel->cpu_invoke = false; // TODO: Add an accelerator thread attribute for this
+      pd->accel->cpu_invoke = iattr->accel_attr.cpu_invoke;
       /**
        * @todo Our code supports only one affinity domain for accelerator threads.
        * For now, if the user specifies an affinity domain, we ignore it and just

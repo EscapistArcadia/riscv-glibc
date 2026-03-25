@@ -52,6 +52,7 @@ struct pthread_accel_attr_t {
     void *mem;
     // void *buf2handle_list;
     unsigned queue_ptr;
+    int cpu_invoke;
 };
 
 struct pthread_accel_t {

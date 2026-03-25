@@ -1160,7 +1160,7 @@ __NTH (pthread_equal (pthread_t __thread1, pthread_t __thread2))
 
 typedef uint8_t accel_primitive_t; // TODO: This should be defined in a more appropriate header file.
 
-extern int pthread_attr_setprimitive_np(pthread_attr_t *attr, accel_primitive_t prim) __THROW;
+extern int pthread_attr_setprimitive_np(pthread_attr_t *attr, accel_primitive_t prim, int cpu_invoke) __THROW;
 extern int pthread_attr_setmmiobase_np(pthread_attr_t *attr, void *mem, void *buf2handle_list) __THROW;
 extern int pthread_attr_setsmqueue_np(pthread_attr_t *attr, unsigned queue_ptr) __THROW;
 

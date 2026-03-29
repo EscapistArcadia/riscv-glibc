@@ -63,6 +63,8 @@ static inline void physical_accel_dump(physical_accel_t *accel) {
     for (int i = 0; i < MAX_CONTEXTS; i++)
         if (bitmap_test(accel->valid_contexts, i))
             printf("%d ", accel->th[i]->accel->id);
+        else
+            printf("- ");
     printf("\n");
     printf("\t- effective_util = %0.2f\n", accel->effective_util);
     printf("\t- devname = %s\n", accel->devname);

@@ -16,6 +16,8 @@
 #include <sys/resource.h>
 #include <sys/syscall.h>
 
+#define hpthread_get_name(th) (th->accel->name)
+
 struct physical_accel_t;
 typedef struct physical_accel_t physical_accel_t;
 typedef uint8_t hpthread_prim_t;
@@ -351,7 +353,7 @@ void vam_search_accel(struct pthread *th) {
     }
     // Update the phy<->virt mapping for the chosen context with the hpthread
     candidate_accel->th[cur_context] = th;
-    // printf("Assigned 0x%016llx to pthread 0x%016llx\n", (unsigned long long) candidate_accel, (unsigned long long) th);
+    // printf("Assigned 0x%016llx to pthread 0x%016llx, accel_allocated = %s\n", (unsigned long long) candidate_accel, (unsigned long long) th, accel_allocated ? "true" : "false");
     th->accel->accel = candidate_accel;
     th->accel->accel_context = cur_context;
     // Mark the context as allocated.
@@ -454,6 +456,7 @@ void vam_configure_cpu_invoke(struct pthread *th, physical_accel_t *accel, unsig
         perror("pthread_attr_setschedparam");
     }
     #endif
+    // printf("sw_kernel = 0x%016llx, &sw_kernel = 0x%016llx\n", (unsigned long long) sw_kernel, (unsigned long long) &sw_kernel);
     if (pthread_create(&cpu_thread, &attr, sw_kernel, (void *) args) != 0) {
         perror("Failed to create CPU thread\n");
     }
@@ -529,6 +532,7 @@ void vam_configure_cpu(struct pthread *th, physical_accel_t *accel) {
     // Create a new CPU thread for the SW implementation of this node.
     pthread_t cpu_thread;
     th->accel->kill_pthread = (bool *) malloc (sizeof(bool)); *(th->accel->kill_pthread) = false;
+    // printf("sw_kernel = 0x%016llx, &sw_kernel = 0x%016llx\n", (unsigned long long) sw_kernel, (unsigned long long) &sw_kernel);
     if (pthread_create(&cpu_thread, NULL, sw_kernel, (void *) NULL) != 0) { // TODO: set arguments
         perror("Failed to create CPU thread\n");
     }

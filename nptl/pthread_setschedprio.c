@@ -38,7 +38,7 @@ pthread_setschedprio (pthread_t threadid, int prio)
 
     if (pd->accel->is_active) {
       extern hpthread_intf_t intf;
-      HIGH_DEBUG(printf("[HPTHREAD] Requested change of priority to %d for hpthread %s.\n", prio, pd->name);)
+      HIGH_DEBUG(printf("[HPTHREAD] Requested change of priority to %d for hpthread %s.\n", prio, pd->accel->name);)
       // Check if the interface is IDLE. If yes, swap to BUSY. If not, block until it is
       while (!hpthread_intf_swap(VAM_IDLE, VAM_BUSY)) SCHED_YIELD;
       // Write the hpthread request to the interface
@@ -47,7 +47,7 @@ pthread_setschedprio (pthread_t threadid, int prio)
       hpthread_intf_set(VAM_SETPRIO);
       // Block until the request is complete (interface state is DONE), then swap to IDLE
       while (!hpthread_intf_swap(VAM_DONE, VAM_IDLE)) SCHED_YIELD;
-      HIGH_DEBUG(printf("[HPTHREAD] Change of priority to %d complete for hpthread %s.\n", prio, pd->name);)
+      HIGH_DEBUG(printf("[HPTHREAD] Change of priority to %d complete for hpthread %s.\n", prio, pd->accel->name);)
     }
     return 0;
   }

@@ -15,6 +15,8 @@
 #define QUEUE_AVAIL 1
 #define QUEUE_BUSY 2
 
+// #define HIGH_VERBOSE
+
 // Different debug levels for prints
 #if defined(HIGH_VERBOSE)
 #define HIGH_DEBUG(x) x

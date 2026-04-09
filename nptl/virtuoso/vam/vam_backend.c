@@ -737,7 +737,7 @@ bool vam_load_balance(void) {
     move_th_max->accel->th_last_move = get_counter();
 
     // Check if there exist any valid contexts on least loaded accel
-    if (bitmap_any(min_util_accel->valid_contexts)) {
+    if (bitmap_all(min_util_accel->valid_contexts)) {
         // if not, we need to release the least loaded thread on it.
         for (int i = 0; i < MAX_CONTEXTS; i++) {
             if (bitmap_test(min_util_accel->valid_contexts, i)) {

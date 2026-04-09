@@ -671,7 +671,7 @@ __pthread_create_2_1 (pthread_t *newthread, const pthread_attr_t *attr,
   if (iattr->flags & ATTR_FLAG_ACCELERATOR) {
     pd = (struct pthread *)malloc(sizeof(struct pthread));
     pd->accel = (struct pthread_accel_t *)malloc(sizeof(struct pthread_accel_t));
-    if (pd) {
+    if (pd && pd->accel) {
       pd->accel->id = ++accel_id;
       pd->accel->is_active = false;
       pd->accel->prim = iattr->accel_attr.prim;
@@ -679,11 +679,13 @@ __pthread_create_2_1 (pthread_t *newthread, const pthread_attr_t *attr,
       pd->accel->queue_ptr = iattr->accel_attr.queue_ptr;
       pd->accel->nprio = iattr->schedparam.sched_priority;
       pd->accel->cpu_invoke = iattr->accel_attr.cpu_invoke;
+      pd->accel->sw_kernel = start_routine;
       /**
        * @todo Our code supports only one affinity domain for accelerator threads.
        * For now, if the user specifies an affinity domain, we ignore it and just
        * use the first one.
        */
+      pd->accel->affinity = 0;
       if (iattr->cpuset != NULL){
         for (int i = 1; i < CPU_SETSIZE; i++) {
           if (CPU_ISSET(i, iattr->cpuset)) {
@@ -691,8 +693,6 @@ __pthread_create_2_1 (pthread_t *newthread, const pthread_attr_t *attr,
             break;
           }
         }
-      } else {
-        pd->accel->affinity = 0;
       }
       extern hpthread_intf_t intf;
       extern void wakeup_vam(void);
@@ -714,7 +714,6 @@ __pthread_create_2_1 (pthread_t *newthread, const pthread_attr_t *attr,
       // printf("[HPTHREAD] Received hpthread %s.\n", pd->accel->name);
       pd->accel->is_active = true;
       pd->accel->th_last_move = get_counter();
-      pd->accel->sw_kernel = start_routine;
       *newthread = (pthread_t) pd;
       return 0;
     } else {

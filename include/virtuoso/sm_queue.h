@@ -2,6 +2,7 @@
 #define __SM_QUEUE_H__
 
 // #include <hpthread.h>
+#include <virtuoso/common/common_defines.h>
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -22,7 +23,7 @@ typedef struct {
 } sm_queue_t;
 
 static inline void sm_queue_init(sm_queue_t *q) {
-    // __atomic_store_n(&(q->stat), QUEUE_AVAIL, __ATOMIC_SEQ_CST);
+    __atomic_store_n(&(q->stat), QUEUE_AVAIL, __ATOMIC_SEQ_CST);
     __atomic_store_n(&(q->head), 0, __ATOMIC_SEQ_CST);
     __atomic_store_n(&(q->tail), 0, __ATOMIC_SEQ_CST);
     for (unsigned i = 0; i < SM_QUEUE_SIZE; i++) {
